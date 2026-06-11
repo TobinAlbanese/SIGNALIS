@@ -1,0 +1,56 @@
+{
+  "name": "taosint",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "TAOSINT - a local-first manual intelligence mapping notebook.",
+  "scripts": {
+    "dev": "npm run build && npm run start",
+    "dev:hot": "concurrently -k \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "node server/index.mjs",
+    "dev:web": "vite --host 127.0.0.1 --port 5174 --strictPort",
+    "build": "tsc -b && vite build",
+    "start": "NODE_ENV=production node server/index.mjs",
+    "db:reset": "node server/scripts/reset-db.mjs",
+    "seed": "node server/scripts/seed.mjs",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-table": "^8.21.3",
+    "@vitejs/plugin-react": "^4.5.2",
+    "@xyflow/react": "^12.8.2",
+    "clsx": "^2.1.1",
+    "dagre": "^0.8.5",
+    "express": "^5.1.0",
+    "html-to-image": "^1.11.13",
+    "jszip": "^3.10.1",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.468.0",
+    "multer": "^2.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.58.0",
+    "react-leaflet": "^4.2.1",
+    "react-router-dom": "^6.30.1",
+    "zod": "^3.25.64",
+    "zustand": "^4.5.7"
+  },
+  "devDependencies": {
+    "@types/dagre": "^0.7.53",
+    "@types/express": "^5.0.3",
+    "@types/leaflet": "^1.9.18",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.15.31",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "autoprefixer": "^10.4.21",
+    "concurrently": "^8.2.2",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3",
+    "vite": "^5.4.19"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
+}

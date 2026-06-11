@@ -1,0 +1,16 @@
+node_modules/
+dist/
+data/*.sqlite
+data/*.sqlite-*
+media/images/*
+media/documents/*
+media/originals/*
+media/processed/*
+exports/*
+backups/*
+!.gitkeep
+.DS_Store
+*.log
+.npm-cache/
+logs/
+.taosint-dev.pid

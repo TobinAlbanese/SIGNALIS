@@ -1,0 +1,310 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --focus-ring: 3px;
+  --focus-color: var(--c-accent, #d62827);
+  --focus-radius: 12px;
+  --dropdown-bg: #282828;
+  --dropdown-text: #fff;
+  --dropdown-border: #ccc;
+  --dropdown-hover-bg: #fff;
+  --dropdown-hover-text: #000;
+  --c-text: #fff;
+  --c-text-secondary: #ece9e4;
+  --c-bg: #282828;
+  --c-bg-secondary: #fff;
+  --c-bg-modal-backdrop: #202020a6;
+  --c-border: #333;
+  --c-disabled: #92a0b180;
+  --c-ui: #d62827;
+  --c-ui-border: #92a0b180;
+  --c-accent: #d62827;
+  --c-input-border: #92a0b180;
+  --c-button-text: #fff;
+  --c-button-outline: #92a0b1;
+  --c-sponsored: #1e1e1e;
+  --c-text-third: #000;
+  --c-text-2third: #4a4a4a;
+  --c-bg-third: #282828;
+  color-scheme: dark;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--c-bg);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --c-text: #000;
+    --c-text-secondary: #4a4a4a;
+    --c-bg: #fff;
+    --c-bg-secondary: #282828;
+    --c-bg-modal-backdrop: #ffffffbf;
+    --c-border: #000;
+    --c-disabled: #92a0b180;
+    --c-ui: #d62827;
+    --c-ui-border: #dfeefc;
+    --c-accent: #d62827;
+    --c-input-border: #92a0b1;
+    --c-button-text: #fff;
+    --c-button-outline: #92a0b1;
+    --c-sponsored: #f8f8f8;
+    --c-text-third: #fff;
+    --c-text-2third: #ece9e4;
+    --c-bg-third: #282828;
+    --dropdown-bg: #fff;
+    --dropdown-text: #000;
+    --dropdown-border: #92a0b1;
+    --dropdown-hover-bg: #282828;
+    --dropdown-hover-text: #fff;
+    color-scheme: light;
+  }
+}
+
+*, :after, :before {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background:
+    linear-gradient(180deg, rgba(214, 40, 39, 0.1), transparent 180px),
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent 320px),
+    var(--c-bg);
+  color: var(--c-text);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: var(--focus-ring) solid var(--focus-color);
+  outline-offset: 2px;
+  border-radius: var(--focus-radius);
+}
+
+::selection {
+  background: rgba(214, 40, 39, 0.35);
+}
+
+.app-shell {
+  display: grid;
+  grid-template-rows: 58px minmax(0, 1fr) minmax(44px, auto);
+  height: 100vh;
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(176px, 14vw) minmax(0, 1fr) minmax(280px, 21vw);
+  min-height: 0;
+}
+
+@media (max-width: 1080px) {
+  .workspace-grid {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .right-inspector {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .left-sidebar {
+    display: none;
+  }
+}
+
+.panel {
+  border-color: color-mix(in srgb, var(--c-border), transparent 12%);
+  background: color-mix(in srgb, var(--c-sponsored), transparent 2%);
+}
+
+.glass-panel {
+  background: color-mix(in srgb, var(--c-sponsored), transparent 10%);
+  border: 1px solid color-mix(in srgb, var(--c-border), transparent 18%);
+}
+
+.surface {
+  background: color-mix(in srgb, var(--c-bg), #111 20%);
+  border: 1px solid color-mix(in srgb, var(--c-border), transparent 12%);
+}
+
+.subtle-scroll {
+  scrollbar-color: rgba(214, 40, 39, 0.75) rgba(255, 255, 255, 0.04);
+  scrollbar-width: thin;
+}
+
+.badge {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 3px 9px;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.confidence-high {
+  background: rgba(34, 197, 94, 0.14);
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.32);
+}
+
+.confidence-medium {
+  background: rgba(59, 130, 246, 0.14);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.32);
+}
+
+.confidence-low {
+  background: rgba(234, 179, 8, 0.15);
+  color: #fde68a;
+  border-color: rgba(234, 179, 8, 0.38);
+}
+
+.confidence-unknown {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
+.confidence-contradicted {
+  background: rgba(214, 40, 39, 0.2);
+  color: #fecaca;
+  border-color: rgba(214, 40, 39, 0.6);
+}
+
+.entity-person {
+  --entity-color: #60a5fa;
+}
+
+.entity-organization {
+  --entity-color: #c084fc;
+}
+
+.entity-location {
+  --entity-color: #4ade80;
+}
+
+.entity-event {
+  --entity-color: #fb923c;
+}
+
+.entity-source {
+  --entity-color: #94a3b8;
+}
+
+.entity-custom {
+  --entity-color: #f87171;
+}
+
+.ta-node {
+  min-width: 190px;
+  border: 1px solid color-mix(in srgb, var(--entity-color), transparent 35%);
+  border-left: 4px solid var(--entity-color);
+  background: rgba(22, 22, 22, 0.96);
+  color: #fff;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+}
+
+.ta-node.compact {
+  min-width: 150px;
+}
+
+.sticky-node {
+  min-width: 210px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #2d271d;
+  color: #fff7ed;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+}
+
+.sticky-node.warning {
+  background: #3a241f;
+  border-color: rgba(214, 40, 39, 0.5);
+}
+
+.sticky-node.hypothesis {
+  background: #1f2a3a;
+}
+
+.sticky-node.verified {
+  background: #183125;
+}
+
+.react-flow__edge-path {
+  stroke-width: 2;
+}
+
+.react-flow__edge-textbg {
+  fill: #111;
+  opacity: 0.88;
+}
+
+.react-flow__edge-text {
+  fill: #fff;
+  font-size: 11px;
+}
+
+.leaflet-container {
+  min-height: 100%;
+  width: 100%;
+  background: #181818;
+  font: inherit;
+}
+
+.map-marker {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #d62827;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-weight: 800;
+}
+
+.markdown-body {
+  line-height: 1.55;
+}
+
+.markdown-body a {
+  color: #93c5fd;
+  text-decoration: underline;
+}
+
+.markdown-body ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+
+.markdown-body input[type='checkbox'] {
+  margin-right: 0.4rem;
+}
