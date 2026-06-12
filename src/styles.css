@@ -112,8 +112,28 @@ select:focus-visible,
 
 .workspace-grid {
   display: grid;
-  grid-template-columns: minmax(176px, 14vw) minmax(0, 1fr) minmax(280px, 21vw);
+  grid-template-columns: var(--sidebar-width, minmax(176px, 14vw)) 6px minmax(0, 1fr) 6px var(--inspector-width, minmax(280px, 21vw));
   min-height: 0;
+}
+
+.workspace-resizer {
+  position: relative;
+  z-index: 15;
+  cursor: col-resize;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.workspace-resizer::after {
+  content: "";
+  position: absolute;
+  inset: 0 2px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background 120ms ease;
+}
+
+.workspace-resizer:hover::after {
+  background: rgba(214, 40, 39, 0.75);
 }
 
 @media (max-width: 1080px) {
@@ -121,7 +141,8 @@ select:focus-visible,
     grid-template-columns: 72px minmax(0, 1fr);
   }
 
-  .right-inspector {
+  .right-inspector,
+  .workspace-resizer {
     display: none;
   }
 }
@@ -193,6 +214,12 @@ select:focus-visible,
   border-color: rgba(148, 163, 184, 0.28);
 }
 
+.confidence-none {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.72);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
 .confidence-contradicted {
   background: rgba(214, 40, 39, 0.2);
   color: #fecaca;
@@ -224,16 +251,18 @@ select:focus-visible,
 }
 
 .ta-node {
-  min-width: 190px;
+  width: 170px;
+  min-width: 170px;
   border: 1px solid color-mix(in srgb, var(--entity-color), transparent 35%);
-  border-left: 4px solid var(--entity-color);
+  border-top: 4px solid var(--entity-color);
   background: rgba(22, 22, 22, 0.96);
   color: #fff;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
 }
 
 .ta-node.compact {
-  min-width: 150px;
+  width: 132px;
+  min-width: 132px;
 }
 
 .sticky-node {
@@ -271,6 +300,32 @@ select:focus-visible,
   font-size: 11px;
 }
 
+.react-flow__controls {
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.42);
+}
+
+.react-flow__controls-button {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background: #181818 !important;
+  color: #fff !important;
+  fill: #fff !important;
+}
+
+.react-flow__controls-button:hover {
+  background: rgba(214, 40, 39, 0.22) !important;
+}
+
+.react-flow__minimap {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: #111 !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.42);
+}
+
+.react-flow__minimap-mask {
+  fill: rgba(255, 255, 255, 0.06);
+}
+
 .leaflet-container {
   min-height: 100%;
   width: 100%;
@@ -289,6 +344,33 @@ select:focus-visible,
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   color: #fff;
   font-weight: 800;
+}
+
+.country-focus-label {
+  border: 1px solid rgba(214, 40, 39, 0.42) !important;
+  border-radius: 999px !important;
+  background: rgba(20, 20, 20, 0.78) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  font-weight: 700;
+}
+
+.country-focus-label::before {
+  display: none;
+}
+
+.country-map-label {
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(214, 40, 39, 0.5);
+  border-radius: 999px;
+  background: rgba(16, 16, 16, 0.78);
+  padding: 5px 10px;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.36);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .markdown-body {

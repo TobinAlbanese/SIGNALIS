@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Download, FileDown, FileUp, Plus, Settings } from 'lucide-react';
 import { api, downloadUrl } from '../../lib/api';
@@ -14,6 +14,8 @@ export function AppShell() {
   const { loadProjects, activeProjectId, error, refreshProjectData } = useWorkspace();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(212);
+  const [inspectorWidth, setInspectorWidth] = useState(340);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -33,6 +35,31 @@ export function AppShell() {
     }
   }
 
+  function beginResize(panel: 'sidebar' | 'inspector') {
+    const onMove = (event: MouseEvent) => {
+      if (panel === 'sidebar') {
+        setSidebarWidth(Math.min(340, Math.max(72, event.clientX)));
+      } else {
+        setInspectorWidth(Math.min(520, Math.max(260, window.innerWidth - event.clientX)));
+      }
+    };
+    const onUp = () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+
+  const workspaceStyle = {
+    '--sidebar-width': `${sidebarWidth}px`,
+    '--inspector-width': `${inspectorWidth}px`
+  } as CSSProperties;
+
   return (
     <div className="app-shell">
       <TopBar
@@ -51,13 +78,27 @@ export function AppShell() {
         </div>
       ) : null}
 
-      <div className="workspace-grid min-h-0">
+      <div className="workspace-grid min-h-0" style={workspaceStyle}>
         <Sidebar />
+        <div
+          className="workspace-resizer workspace-resizer-left"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
+          onMouseDown={() => beginResize('sidebar')}
+        />
         <main className="min-w-0 overflow-auto border-x border-white/10 subtle-scroll" aria-label="Main workspace">
           <div className="min-h-full p-4 lg:p-5">
             <Outlet />
           </div>
         </main>
+        <div
+          className="workspace-resizer workspace-resizer-right"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize inspector"
+          onMouseDown={() => beginResize('inspector')}
+        />
         <RightInspector />
       </div>
 

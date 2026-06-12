@@ -85,19 +85,17 @@ Open:
 http://localhost:4343/
 ```
 
-## Demo Data
+## First Launch Seed Data
 
-The seed creates one fictional project:
+The seed creates one project:
 
-- Fictional Regional Organization Study
-- Person A, Person B, Person C
-- Organization X, Sub-organization Y
-- Location 1 near Quetta at city-level precision
-- Event 1
-- Source 1
-- Six demo relationships
+- The AL-Qaeda Framework
+- 222 structured records across people, organizations, regions, countries, and key locations
+- 164 chart-derived and chronology-derived relationships
+- 44 timeline events
+- 3 source records, 3 claims, 4 open questions, and 2 graph sticky notes
 
-The demo is fictional by design and avoids real extremist, militant, terrorist, criminal, or sanctioned individuals.
+The seed is built from the user-provided chart/PDF and analyst chronology. Dense chart-derived links are intentionally marked as chart-claimed, low/unknown confidence, or requiring verification where appropriate. Use manual source review before external publication.
 
 ## Project Structure
 
@@ -106,7 +104,7 @@ The demo is fictional by design and avoids real extremist, militant, terrorist, 
 ├── server/
 │   ├── db.mjs                  # SQLite schema, data access, exports
 │   ├── index.mjs               # Express API and static production server
-│   ├── seedData.mjs            # Fictional seed data
+│   ├── seedData.mjs            # First-launch framework seed data
 │   └── scripts/
 │       ├── reset-db.mjs
 │       └── seed.mjs
@@ -131,12 +129,12 @@ The demo is fictional by design and avoids real extremist, militant, terrorist, 
 - SQLite schema for projects, entities, people, organizations, locations, events, sources, relationships, notes, files, claims, open questions, diagram layouts, sticky notes, and audit log
 - REST API for project, entity, relationship, event, source, note, file, search, geocoding, and export workflows
 - Three-panel analyst layout with top bar, sidebar, workspace, inspector, and bottom drawer
-- Entity/source tables powered by TanStack Table
-- Manual quick-add workflow for projects, entities, relationships, events, sources, and notes
+- Entity table powered by TanStack Table and a Zotero-style source review workspace
+- Manual quick-add workflow for projects, entities, relationships, locations, events, sources, and notes
 - Right inspector editing for selected entities, relationships, events, sources, notes, files, and sticky notes
-- React Flow graph board with custom entity/sticky nodes, labeled edges, drag-to-create relationships, minimap, zoom/pan, layout controls, and image export
+- React Flow graph board with custom entity/sticky nodes, labeled edges, drag-to-create relationships, dark minimap, zoom/pan, layout controls, and image export
 - Diagram modes: freeform, hierarchy, family tree, spider, organization chart, event network, location network, source/evidence graph
-- Leaflet map board with swappable layers, markers, manual pins, precision labels, measurement, geocoding provider interface, and GeoJSON export
+- Leaflet map board with swappable layers, click-to-add person/event/location/note markers, country highlights, route/measurement lines, precision labels, organization/country/confidence filters, geocoding provider interface, GeoJSON export, and PNG/JPG/WebP capture
 - Timeline view combining events, relationship dates, and source publication dates
 - Notes workspace with simple Markdown-style preview
 - File library with local uploads, image previews, duplicate hints from local hashes, and external reverse-image-search launchers
@@ -170,7 +168,12 @@ Graph visual export:
 
 Map export:
 
-- Use the Map Board export buttons for GeoJSON, PNG, or JPG.
+- Use the Map Board export buttons for GeoJSON, PNG, JPG, or WebP.
+
+Automatic project archive:
+
+- When a new project is created, the currently active project is archived under `backups/`.
+- The archive folder includes JSON data, GeoJSON, GraphML, Markdown, copied media files, metadata, and lightweight SVG visual summaries for the network and map.
 
 ## Database Reset
 
@@ -178,7 +181,7 @@ Map export:
 npm run db:reset
 ```
 
-This removes `data/taosint.sqlite`, recreates the schema, and reseeds the fictional demo project.
+This removes `data/taosint.sqlite`, recreates the schema, and reseeds `The AL-Qaeda Framework`.
 
 ## Local Storage
 

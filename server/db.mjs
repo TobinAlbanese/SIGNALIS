@@ -72,8 +72,22 @@ const relationshipTypes = new Set([
   'family_member_of',
   'parent_of',
   'child_of',
+  'son_of',
+  'daughter_of',
+  'brother_of',
+  'brother_in_law_of',
+  'son_in_law_of',
   'sibling_of',
   'spouse_of',
+  'ideological_mentor_of',
+  'spiritual_mentor_of',
+  'founded',
+  'co_founder_of',
+  'emir_of',
+  'caliph_of',
+  'representative_of',
+  'head_of',
+  'liaison_to',
   'associate_of',
   'ally_of',
   'rival_of',
@@ -97,7 +111,7 @@ const relationshipTypes = new Set([
   'custom'
 ]);
 
-const confidenceValues = new Set(['high', 'medium', 'low', 'unknown', 'contradicted']);
+const confidenceValues = new Set(['', 'high', 'medium', 'low', 'unknown', 'contradicted']);
 
 let db;
 
@@ -629,6 +643,108 @@ function validateRelationshipType(value) {
   return relationshipTypes.has(value) ? value : 'custom';
 }
 
+function safeFileSegment(value = 'project') {
+  return String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'project';
+}
+
+function escapeXml(value = '') {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+}
+
+function archiveGraphSvg(bundle) {
+  const width = 1600;
+  const height = 1000;
+  const nodes = bundle.entities.slice(0, 90).map((entity, index) => {
+    const columns = 9;
+    return {
+      ...entity,
+      x: 90 + (index % columns) * 165,
+      y: 120 + Math.floor(index / columns) * 84
+    };
+  });
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const edges = bundle.relationships
+    .filter((relationship) => nodeById.has(relationship.sourceEntityId) && nodeById.has(relationship.targetEntityId))
+    .slice(0, 160)
+    .map((relationship) => {
+      const source = nodeById.get(relationship.sourceEntityId);
+      const target = nodeById.get(relationship.targetEntityId);
+      return `<line x1="${source.x + 64}" y1="${source.y + 24}" x2="${target.x + 64}" y2="${target.y + 24}" stroke="#8f8f8f" stroke-width="1.2" opacity="0.55" />
+      <text x="${(source.x + target.x) / 2 + 48}" y="${(source.y + target.y) / 2 + 18}" fill="#ece9e4" font-size="10">${escapeXml(relationship.relationshipType.replaceAll('_', ' '))}</text>`;
+    })
+    .join('\n');
+  const nodeMarkup = nodes
+    .map((node) => {
+      const color =
+        node.type === 'person'
+          ? '#4095d6'
+          : node.type.includes('organization')
+            ? '#a569d6'
+            : node.type === 'location'
+              ? '#39b36b'
+              : node.type === 'event'
+                ? '#e98b2a'
+                : '#9a9a9a';
+      return `<g>
+        <rect x="${node.x}" y="${node.y}" width="128" height="48" rx="7" fill="#181818" stroke="${color}" stroke-width="1.5" />
+        <text x="${node.x + 10}" y="${node.y + 20}" fill="#ffffff" font-size="12" font-weight="700">${escapeXml(node.name).slice(0, 28)}</text>
+        <text x="${node.x + 10}" y="${node.y + 36}" fill="#bdbdbd" font-size="10">${escapeXml(node.type)} · ${escapeXml(node.confidence)}</text>
+      </g>`;
+    })
+    .join('\n');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+    <rect width="100%" height="100%" fill="#111111"/>
+    <text x="40" y="48" fill="#ffffff" font-size="28" font-weight="800">${escapeXml(bundle.project.title)} network archive</text>
+    <text x="40" y="76" fill="#d62827" font-size="14">${bundle.entities.length} entities · ${bundle.relationships.length} relationships · generated ${escapeXml(bundle.metadata.exportedAt)}</text>
+    ${edges}
+    ${nodeMarkup}
+  </svg>`;
+}
+
+function archiveMapSvg(featureCollection, title) {
+  const width = 1600;
+  const height = 900;
+  const features = featureCollection.features ?? [];
+  const points = features
+    .map((feature) => ({
+      lon: Number(feature.geometry?.coordinates?.[0]),
+      lat: Number(feature.geometry?.coordinates?.[1]),
+      name: feature.properties?.name ?? feature.properties?.title ?? 'Point'
+    }))
+    .filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon));
+  const toX = (lon) => ((lon + 180) / 360) * width;
+  const toY = (lat) => ((90 - lat) / 180) * height;
+  const pointMarkup = points
+    .slice(0, 250)
+    .map((point) => {
+      const x = toX(point.lon);
+      const y = toY(point.lat);
+      return `<g>
+        <circle cx="${x}" cy="${y}" r="7" fill="#d62827" stroke="#ffffff" stroke-width="2" />
+        <text x="${x + 10}" y="${y - 8}" fill="#ffffff" font-size="11">${escapeXml(point.name).slice(0, 38)}</text>
+      </g>`;
+    })
+    .join('\n');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+    <rect width="100%" height="100%" fill="#151515"/>
+    <g opacity="0.45" stroke="#3a3a3a" stroke-width="1">
+      ${Array.from({ length: 12 }, (_, index) => `<line x1="${(index + 1) * (width / 13)}" y1="0" x2="${(index + 1) * (width / 13)}" y2="${height}" />`).join('')}
+      ${Array.from({ length: 6 }, (_, index) => `<line x1="0" y1="${(index + 1) * (height / 7)}" x2="${width}" y2="${(index + 1) * (height / 7)}" />`).join('')}
+    </g>
+    <text x="40" y="48" fill="#ffffff" font-size="28" font-weight="800">${escapeXml(title)} map archive</text>
+    <text x="40" y="76" fill="#d62827" font-size="14">${points.length} mapped points · equirectangular summary, not an exact Leaflet screenshot</text>
+    ${pointMarkup || '<text x="40" y="140" fill="#ece9e4" font-size="18">No mapped points in this project yet.</text>'}
+  </svg>`;
+}
+
 export const store = {
   database: getDb,
 
@@ -796,6 +912,31 @@ export const store = {
       createdAt: timestamp,
       updatedAt: timestamp
     };
+    if (!payload.id) {
+      const duplicate = rowToCamel(
+        database
+          .prepare('SELECT id FROM entities WHERE project_id = ? AND type = ? AND lower(name) = lower(?) LIMIT 1')
+          .get(projectId, entity.type, entity.name)
+      );
+      if (duplicate?.id) {
+        const existing = this.getEntity(duplicate.id);
+        const unique = (...items) => Array.from(new Set(items.flat().filter(Boolean)));
+        const mergedNotes = unique([existing.notes, entity.notes]).join('\n\n');
+        const updated = this.updateEntity(existing.id, {
+          ...payload,
+          aliases: unique(existing.aliases ?? [], entity.aliases ?? []),
+          imageFileId: existing.imageFileId || entity.imageFileId,
+          summary: existing.summary || entity.summary,
+          notes: mergedNotes,
+          tags: unique(existing.tags ?? [], entity.tags ?? []),
+          confidence: existing.confidence || entity.confidence,
+          sourceIds: unique(existing.sourceIds ?? [], entity.sourceIds ?? []),
+          details: payload.details ?? {}
+        });
+        audit(database, { projectId, action: 'merged duplicate entity', targetType: 'entity', targetId: existing.id, details: { type: entity.type } });
+        return updated;
+      }
+    }
     database
       .prepare(
         `INSERT INTO entities (
@@ -1563,6 +1704,56 @@ export const store = {
       }
     }
     return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+  },
+
+  archiveProject(projectId) {
+    const bundle = this.exportProject(projectId);
+    if (!bundle) return null;
+    const archivedAt = now();
+    const stamp = archivedAt.replace(/[:.]/g, '-');
+    const archiveDir = path.join(paths.backupsDir, `${safeFileSegment(bundle.project.title)}-${stamp}`);
+    const mediaDir = path.join(archiveDir, 'media');
+    const visualDir = path.join(archiveDir, 'visual_exports');
+    fs.mkdirSync(mediaDir, { recursive: true });
+    fs.mkdirSync(visualDir, { recursive: true });
+
+    const writeJson = (fileName, value) => fs.writeFileSync(path.join(archiveDir, fileName), JSON.stringify(value, null, 2));
+    writeJson('project.json', bundle.project);
+    writeJson('entities.json', bundle.entities);
+    writeJson('relationships.json', bundle.relationships);
+    writeJson('events.json', bundle.events);
+    writeJson('sources.json', bundle.sources);
+    writeJson('notes.json', bundle.notes);
+    writeJson('claims.json', bundle.claims);
+    writeJson('open_questions.json', bundle.openQuestions);
+    writeJson('diagram_layouts.json', bundle.diagramLayouts);
+    writeJson('sticky_notes.json', bundle.stickyNotes);
+    writeJson('locations.geojson', this.exportGeoJson(projectId));
+    fs.writeFileSync(path.join(archiveDir, 'graph.graphml'), this.exportGraphMl(projectId));
+    fs.writeFileSync(path.join(archiveDir, 'project.md'), this.exportMarkdown(projectId));
+    fs.writeFileSync(path.join(visualDir, 'network-summary.svg'), archiveGraphSvg(bundle));
+    fs.writeFileSync(path.join(visualDir, 'map-summary.svg'), archiveMapSvg(this.exportGeoJson(projectId), bundle.project.title));
+    fs.writeFileSync(
+      path.join(visualDir, 'README.txt'),
+      'These SVG snapshots are automatic data summaries. Use the Graph and Map export buttons in TAOSINT for exact current viewport PNG, JPG, or WebP captures.'
+    );
+
+    for (const file of bundle.files) {
+      const filePath = path.join(rootDir, file.filePath);
+      if (fs.existsSync(filePath)) {
+        fs.copyFileSync(filePath, path.join(mediaDir, file.fileName));
+      }
+    }
+
+    const metadata = {
+      ...bundle.metadata,
+      archivedAt,
+      archiveFolder: path.relative(rootDir, archiveDir),
+      visualExports: ['visual_exports/network-summary.svg', 'visual_exports/map-summary.svg']
+    };
+    writeJson('archive_metadata.json', metadata);
+    audit(getDb(), { projectId, action: 'archived project', targetType: 'project', targetId: projectId });
+    return metadata;
   },
 
   importProject(bundle) {

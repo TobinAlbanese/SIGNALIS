@@ -2,8 +2,8 @@ import clsx from 'clsx';
 import type { Confidence } from '../../types';
 
 export function ConfidenceBadge({ value }: { value?: Confidence | string }) {
-  const safe = value || 'unknown';
-  return <span className={clsx('badge capitalize', `confidence-${safe}`)}>{safe.replaceAll('-', ' ')}</span>;
+  const safe = value ?? '';
+  return <span className={clsx('badge capitalize', safe ? `confidence-${safe}` : 'confidence-none')}>{safe ? safe.replaceAll('-', ' ') : 'No confidence'}</span>;
 }
 
 export function SourceBadge({ count }: { count: number }) {

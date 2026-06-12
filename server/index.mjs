@@ -70,6 +70,11 @@ app.put('/api/projects/:id', (req, res) => {
   return res.json(project);
 });
 app.delete('/api/projects/:id', (req, res) => res.json({ ok: store.deleteProject(req.params.id) }));
+app.post('/api/projects/:projectId/archive', (req, res) => {
+  const archive = store.archiveProject(req.params.projectId);
+  if (!archive) return notFound(res, 'Project');
+  return res.json(archive);
+});
 
 app.get('/api/projects/:projectId/entities', (req, res) => res.json(store.listEntities(req.params.projectId)));
 app.post('/api/projects/:projectId/entities', (req, res) => res.status(201).json(store.createEntity(req.params.projectId, req.body)));
@@ -312,11 +317,12 @@ if (process.env.NODE_ENV === 'production' && fs.existsSync(distDir)) {
 const server = app.listen(port, () => {
   console.log(`TAOSINT API listening on http://localhost:${port}`);
 });
+const keepAlive = setInterval(() => {}, 60 * 60 * 1000);
 
-process.on('SIGTERM', () => {
+function shutdown() {
+  clearInterval(keepAlive);
   server.close(() => process.exit(0));
-});
+}
 
-process.on('SIGINT', () => {
-  server.close(() => process.exit(0));
-});
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
