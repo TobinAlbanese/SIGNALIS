@@ -6,6 +6,12 @@ import { Button } from '../components/ui/Button';
 import { MarkdownPreview } from '../components/ui/MarkdownPreview';
 import { SectionHeader } from '../components/ui/SectionHeader';
 
+const PREVIEW_LIMIT = 1800;
+
+function previewBody(body: string) {
+  return body.length > PREVIEW_LIMIT ? `${body.slice(0, PREVIEW_LIMIT).trim()}\n\n...` : body;
+}
+
 export function NotesView() {
   const { notes, openQuestions, claims, selectItem } = useWorkspace();
   const [quickAdd, setQuickAdd] = useState(false);
@@ -30,7 +36,7 @@ export function NotesView() {
                 <span className="badge">{note.noteType}</span>
                 <span className="badge">{note.color}</span>
               </div>
-              <MarkdownPreview body={note.body} />
+              <MarkdownPreview body={previewBody(note.body)} />
             </button>
           ))}
         </div>
