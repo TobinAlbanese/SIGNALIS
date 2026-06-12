@@ -274,6 +274,28 @@ function splitList(value = '') {
     .filter(Boolean);
 }
 
+function datePrecision(value = '') {
+  if (/^\d{4}$/.test(value)) return 'year';
+  if (/^\d{4}-\d{2}$/.test(value)) return 'month';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'day';
+  return value ? 'text' : 'unknown';
+}
+
+function locationFunctionTags(summary = '') {
+  const text = summary.toLowerCase();
+  const tags = [];
+  if (text.includes('sanctuary') || text.includes('safe-haven') || text.includes('refuge')) tags.push('function-sanctuary');
+  if (text.includes('training')) tags.push('function-training-geography');
+  if (text.includes('transit') || text.includes('corridor') || text.includes('pipeline')) tags.push('function-transit-corridor');
+  if (text.includes('base')) tags.push('function-affiliate-base');
+  if (text.includes('attack')) tags.push('function-attack-theater');
+  if (text.includes('revenue') || text.includes('finance') || text.includes('funding')) tags.push('function-finance-geography');
+  if (text.includes('media') || text.includes('communications')) tags.push('function-media-communications-node');
+  if (text.includes('prison') || text.includes('detention') || text.includes('capture')) tags.push('function-prison-detention-geography');
+  if (text.includes('symbolic') || text.includes('narrative')) tags.push('function-symbolic-geography');
+  return tags;
+}
+
 function buildSourceHelpers(sources) {
   const core = findSourceId(sources, 'terrorist_groups/al_qaida') || LOCAL_SOURCE_ID;
   return {
@@ -393,7 +415,42 @@ function supplementalOrganizations(sourceIds) {
     ['Ansar al-Sharia Yemen', 'AQAP-associated local governance/branding label in Yemen.'],
     ['Al-Qaeda Shura Council', 'Consultative leadership structure described in public Al-Qaeda histories.'],
     ['Al-Qaeda Military Committee', 'Military/security leadership layer associated with Al-Qaeda Core.'],
-    ['Al-Qaeda External Communications Office', 'Affiliate coordination and external communications layer associated with al-Maghrebi.']
+    ['Al-Qaeda External Communications Office', 'Affiliate coordination and external communications layer associated with al-Maghrebi.'],
+    ['AQAP Prison Network', 'AQAP reconstitution layer tied to prison escapes, former detainees, and leadership recruitment effects.'],
+    ['AQAP Former Detainee Layer', 'AQAP personnel layer involving former detainees and later leadership/media roles.'],
+    ['AQAP Territorial Governance Layer', 'AQAP/Ansar al-Sharia local governance and territorial-control layer in Yemen.'],
+    ['AQAP Aviation Plot Cell', 'AQAP external aviation-plot case-file layer for Flight 253 and cargo/printer-cartridge attempts.'],
+    ['AQIM Sahara Kidnapping Economy', 'AQIM/Sahel hostage, ransom, and desert-mobility economy described in the affiliate-depth notes.'],
+    ['JNIM Siege and Blockade Economy', 'JNIM coercive route-control, blockade, and siege pressure layer in Mali/Sahel.'],
+    ['al-Shabaab Amniyat', 'al-Shabaab intelligence/security wing; tied to internal security, coercion, and attacks in public-source reporting.'],
+    ['al-Shabaab Finance Wing', 'al-Shabaab taxation/extortion and finance bureaucracy described in public-source reporting.'],
+    ['al-Shabaab Military Wing', 'al-Shabaab military command and battlefield structure.'],
+    ['AQIS Recruitment Network', 'AQIS recruitment and South Asia outreach layer associated with Muhammad Maruf and regional propaganda.'],
+    ['AQIS Bangladesh Attack Cell', 'AQIS Bangladesh assassination-campaign case-file layer from the notes.'],
+    ['Syria Split File', 'Nusra, ISIS, JFS, HTS, and Hurras relationship-chain case-file layer.'],
+    ['Hurras al-Din Remnants', 'Former Hurras al-Din members and post-dissolution threat layer after early 2025.'],
+    ['Libyan Islamic Fighting Group / LIFG', 'Historical Libyan veteran-network overlap; not a clean formal Al-Qaeda affiliate.'],
+    ['Tehrik-e-Taliban Pakistan / TTP', 'Pakistan/Afghanistan borderland overlap network; separate from Al-Qaeda.'],
+    ['Islamic Movement of Uzbekistan / IMU', 'Central Asian militant ecosystem overlap in Afghanistan/Pakistan.'],
+    ['Islamic Jihad Union / IJU', 'Central Asian militant ecosystem overlap in Afghanistan/Pakistan.'],
+    ['Turkistan Islamic Party / ETIM', 'Theater-overlap group in Afghanistan/Pakistan and Syria; not a formal Al-Qaeda branch.'],
+    ['Lashkar-e-Taiba / LeT', 'South Asian ecosystem-overlap group; not an Al-Qaeda affiliate.'],
+    ['Jaish-e-Mohammed / JeM', 'South Asian ecosystem-overlap group; not an Al-Qaeda affiliate.'],
+    ['Jemaah Islamiyah / JI', 'Southeast Asian Al-Qaeda-linked historical partner network.'],
+    ['Abu Sayyaf Group', 'Southeast Asian overlap group with historical links in parts and later fragmentation.'],
+    ['Ansaru', 'West Africa AQIM/JNIM-adjacent overlap group; more relevant than Boko Haram for Al-Qaeda mapping.'],
+    ['Boko Haram', 'West Africa contextual actor; later ISIS alignment dominates.'],
+    ['ISWAP', 'ISIS-aligned West Africa actor; contextual rival/overlap, not Al-Qaeda.'],
+    ['Hezbollah', 'Contextual regional actor; not an Al-Qaeda branch.'],
+    ['IRGC / Quds Force', 'Iran-context actor for the Iran-based Al-Qaeda file; not an Al-Qaeda branch.'],
+    ['Hamas', 'Contextual regional actor; not an Al-Qaeda branch.'],
+    ['Palestinian Islamic Jihad', 'Contextual regional actor; not an Al-Qaeda branch.'],
+    ['Houthis', 'Yemen contextual enemy/target relationship for AQAP; not Al-Qaeda.'],
+    ['U.S. State Department', 'Legal designation source for FTO and SDGT records.'],
+    ['Federal Bureau of Investigation', 'Wanted, case-history, and investigative source layer.'],
+    ['Rewards for Justice', 'Reward-offer and wanted-profile source layer.'],
+    ['U.S. Department of the Treasury', 'Sanctions and terrorism-finance designation source layer.'],
+    ['United Nations Security Council Monitoring Team', 'UN ISIL/Al-Qaeda monitoring and sanctions report source layer.']
   ];
   return items.map(([name, summary]) => ({
     id: stableId('org', primaryName(name)),
@@ -423,7 +480,38 @@ function supplementalPeople(sourceIds) {
     ['Abd al-Rahim al-Nashiri', 'USS Cole case figure detained at Guantanamo.', 'detained', 'detention-index'],
     ['Zacarias Moussaoui', 'Arrested before 9/11 and later pleaded guilty in connection with the 9/11 conspiracy.', 'convicted', 'detention-index'],
     ['Hambali', 'Jemaah Islamiyah / Al-Qaeda-linked Southeast Asia figure captured in 2003.', 'detained', 'detention-index'],
-    ['Abu Faraj al-Libi', 'Senior Al-Qaeda figure captured in Pakistan in 2004.', 'detained', 'detention-index']
+    ['Abu Faraj al-Libi', 'Senior Al-Qaeda figure captured in Pakistan in 2004.', 'detained', 'detention-index'],
+    ['Hamza Salih bin Said al-Ghamdi', 'Senior Al-Qaeda figure in the pasted core leadership notes; wanted and tied to Bin Laden inner-circle/security context.', 'wanted', 'core-leadership'],
+    ['Nabila al-Zawahiri', 'Publicly identified daughter of Ayman al-Zawahiri and wife of Abd al-Rahman al-Maghrebi.', 'public-reported', 'zawahiri-family'],
+    ['Azza Ahmed Nowari', 'Publicly discussed wife of Ayman al-Zawahiri; family-context node only.', 'dead', 'zawahiri-family'],
+    ['Mohammed al-Zawahiri', 'Child of Ayman al-Zawahiri publicly reported killed after a U.S. strike in Afghanistan in late 2001.', 'dead', 'zawahiri-family'],
+    ['Aisha al-Zawahiri', 'Child of Ayman al-Zawahiri publicly reported killed after a U.S. strike in Afghanistan in late 2001.', 'dead', 'zawahiri-family'],
+    ['Khadijah', 'Publicly listed wife of Osama bin Laden; divorced 1995; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Unknown wife of Osama bin Laden', 'Briefly married to Osama bin Laden in 1996 according to public profiles; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Abdullah bin Laden', 'Publicly listed son of Osama bin Laden and Najwa Ghanem; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Abdul Rahman bin Laden', 'Publicly listed son of Osama bin Laden and Najwa Ghanem; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Osman bin Laden', 'Publicly listed son of Osama bin Laden and Najwa Ghanem; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Fatima bin Laden', 'Publicly listed daughter of Osama bin Laden and Najwa Ghanem; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Iman bin Laden', 'Publicly listed daughter of Osama bin Laden and Najwa Ghanem; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Ladin Bakir bin Laden', 'Publicly listed child of Osama bin Laden and Najwa Ghanem; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Rukhaiya bin Laden', 'Publicly listed daughter of Osama bin Laden and Najwa Ghanem; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Nour bin Laden', 'Publicly listed child of Osama bin Laden and Najwa Ghanem; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Ali bin Laden', 'Publicly listed child of Osama bin Laden and Khadijah; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Amer bin Laden', 'Publicly listed child of Osama bin Laden and Khadijah; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Aisha bin Laden', 'Publicly listed child of Osama bin Laden and Khadijah; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Khadijah bin Laden', 'Publicly listed daughter of Osama bin Laden and Siham Sabar; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Miriam bin Laden', 'Publicly listed daughter of Osama bin Laden and Siham Sabar; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Sumaiya bin Laden', 'Publicly listed daughter of Osama bin Laden and Siham Sabar; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Safiyah bin Laden', 'Publicly listed child of Osama bin Laden and Amal Ahmed al-Sadah; Abbottabad household context.', 'public-reported', 'bin-laden-family'],
+    ['Aasia bin Laden', 'Publicly listed child of Osama bin Laden and Amal Ahmed al-Sadah; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Ibrahim bin Laden', 'Publicly listed child of Osama bin Laden and Amal Ahmed al-Sadah; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Zainab bin Laden', 'Publicly listed child of Osama bin Laden and Amal Ahmed al-Sadah; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Hussain bin Laden', 'Publicly listed child of Osama bin Laden and Amal Ahmed al-Sadah; family-context node.', 'public-reported', 'bin-laden-family'],
+    ['Haji Mali Khan', 'Haqqani Network figure included in the Haqqani/Taliban contextual people index.', 'public-reported', 'haqqani-family'],
+    ['Avijit Roy', 'Bangladesh secular writer killed in the AQIS-linked attack sequence; victim/case-file node.', 'dead', 'aqis-bangladesh-case'],
+    ['Faisal Arefin Dipan', 'Bangladesh publisher killed in the AQIS-linked attack sequence; victim/case-file node.', 'dead', 'aqis-bangladesh-case'],
+    ['Xulhaz Mannan', 'Bangladesh LGBTQIA+ activist killed in AQIS-claimed 2016 attack; victim/case-file node.', 'dead', 'aqis-bangladesh-case'],
+    ['Mahbub Tonoy', 'Bangladesh activist killed in AQIS-claimed 2016 attack; victim/case-file node.', 'dead', 'aqis-bangladesh-case']
   ];
   return rows.map(([name, summary, status, tag]) => ({
     id: stableId('person', name),
@@ -458,18 +546,31 @@ function locationSpecs(sourceIds) {
     ['Sanaa, Yemen', 15.3694, 44.191, 'City', 'AQAP prison-break and Yemeni government target geography.'],
     ['Aden, Yemen', 12.7855, 45.0187, 'City', 'USS Cole and Yemen maritime attack geography.'],
     ['Mukalla, Yemen', 14.5425, 49.1242, 'City', 'AQAP territorial and revenue peak geography.'],
+    ['Abyan, Yemen', 13.6343, 46.0563, 'Region', 'AQAP territorial phase and Zinjibar/Abyan governance geography.'],
+    ['Zinjibar, Yemen', 13.1287, 45.3807, 'City', 'AQAP/Ansar al-Sharia territorial-control geography in Abyan.'],
+    ['Shabwah, Yemen', 14.7546, 46.5163, 'Region', 'Broad AQAP base and conflict geography.'],
+    ['Hadramawt, Yemen', 16.9304, 49.3653, 'Region', 'AQAP base and Mukalla territorial/revenue geography.'],
+    ['al-Bayda, Yemen', 14.2073, 45.4498, 'Region', 'AQAP broad operating area and Yakla/al-Bayda raid geography.'],
+    ['Marib, Yemen', 15.4707, 45.3229, 'Region', 'Broad AQAP/Yemen conflict geography.'],
     ['Somalia', 5.1521, 46.1996, 'Country', 'al-Shabaab base geography.'],
     ['Mogadishu, Somalia', 2.0469, 45.3182, 'City', 'al-Shabaab urban attack geography.'],
+    ['Lower Shabelle, Somalia', 1.8766, 44.737, 'Region', 'al-Shabaab base, taxation, and military geography.'],
+    ['Jubaland, Somalia', 0.526, 42.772, 'Region', 'al-Shabaab base and Kenya-border projection geography.'],
+    ['Bay and Bakool, Somalia', 3.216, 43.65, 'Region', 'al-Shabaab southern/central Somalia operating geography.'],
     ['Kenya', -0.0236, 37.9062, 'Country', 'al-Shabaab regional attack theater and 1998 embassy bombing context.'],
     ['Nairobi, Kenya', -1.2921, 36.8219, 'City', '1998 embassy bombing, Westgate, and DusitD2 attack geography.'],
+    ['Garissa, Kenya', -0.4532, 39.6461, 'City', 'al-Shabaab Garissa University attack geography.'],
     ['Manda Bay, Kenya', -2.1804, 40.9131, 'Region', 'Camp Simba / Manda Bay attack geography.'],
     ['Tanzania', -6.369, 34.8888, 'Country', '1998 embassy bombing country context.'],
     ['Dar es Salaam, Tanzania', -6.7924, 39.2083, 'City', '1998 U.S. Embassy bombing geography.'],
     ['Mali', 17.5707, -3.9962, 'Country', 'AQIM/JNIM base and Sahel insurgency geography.'],
     ['Bamako, Mali', 12.6392, -8.0029, 'City', 'Radisson Blu and JNIM capital-pressure attack geography.'],
     ['Kidal, Mali', 18.4411, 1.4078, 'City', 'Northern Mali / JNIM strategic geography.'],
+    ['Gao, Mali', 16.263, -0.027, 'City', 'Northern Mali AQIM/JNIM and 2012 takeover geography.'],
+    ['Mopti, Mali', 14.4843, -4.1829, 'Region', 'Central Mali / Macina and JNIM rural-expansion geography.'],
     ['Timbuktu, Mali', 16.7666, -3.0026, 'City', 'Northern Mali and UN base attack geography.'],
     ['Burkina Faso', 12.2383, -1.5616, 'Country', 'JNIM expansion geography.'],
+    ['Ouagadougou, Burkina Faso', 12.3714, -1.5197, 'City', 'AQIM/JNIM-linked hotel and capital attack geography.'],
     ['Djibo, Burkina Faso', 14.0994, -1.6279, 'City', 'JNIM 2025 town seizure geography.'],
     ['Barsalogho, Burkina Faso', 13.449, -1.058, 'City', '2024 JNIM mass-casualty attack geography.'],
     ['Algeria', 28.0339, 1.6596, 'Country', 'GSPC/AQIM root geography.'],
@@ -481,11 +582,25 @@ function locationSpecs(sourceIds) {
     ['Grand-Bassam, Cote dIvoire', 5.2118, -3.7388, 'City', '2016 AQIM coastal attack geography.'],
     ['Syria', 34.8021, 38.9968, 'Country', 'Nusra, HTS, and Hurras al-Din theater.'],
     ['Idlib, Syria', 35.9306, 36.6339, 'City', 'Northwest Syria / former affiliate theater context.'],
+    ['Aleppo, Syria', 36.2021, 37.1343, 'City', 'Syria bombing-wave and former affiliate theater geography.'],
+    ['Damascus, Syria', 33.5138, 36.2765, 'City', 'Syria attack geography including Hurras-linked bus attack notes.'],
+    ['Raqqah, Syria', 35.9594, 39.0079, 'Region', 'Hurras al-Din 2021 attack geography.'],
+    ['Latakia, Syria', 35.5317, 35.7901, 'Region', '2023/2025 Syria former-Hurras and Ansar al-Islam violence geography.'],
+    ['Tartus, Syria', 34.8959, 35.8867, 'Region', '2025 former-Hurras violence geography in the pasted notes.'],
     ['Kabul, Afghanistan', 34.5553, 69.2075, 'City', 'Zawahiri death and Taliban/AQ safe-haven controversy geography.'],
     ['Iraq', 33.2232, 43.6793, 'Country', 'AQI-to-ISIS legacy geography.'],
+    ['Karachi, Pakistan', 24.8607, 67.0011, 'City', 'AQIS Karachi Naval Dockyard attack attempt and Pakistan urban attack geography.'],
     ['Bangladesh', 23.685, 90.3563, 'Country', 'AQIS assassination campaign geography.'],
+    ['Dhaka, Bangladesh', 23.8103, 90.4125, 'City', 'AQIS Bangladesh blogger/publisher and Xulhaz/Mahbub attack geography.'],
     ['India', 20.5937, 78.9629, 'Country', 'AQIS target/recruitment narrative geography.'],
+    ['Kashmir', 34.0837, 74.7973, 'Region', 'AQIS/South Asia narrative and recruitment geography.'],
     ['Saudi Arabia', 23.8859, 45.0792, 'Country', 'Bin Laden origin, Gulf War grievance, and AQAP Saudi/Yemen merger context.'],
+    ['Riyadh, Saudi Arabia', 24.7136, 46.6753, 'City', 'Bin Laden origin and Saudi militancy context.'],
+    ['Kuwait', 29.3117, 47.4818, 'Country', 'Khalid Sheikh Mohammed public birth-place context.'],
+    ['Guantanamo Bay', 19.906, -75.096, 'Region', 'Detention geography for publicly detained Al-Qaeda case figures.'],
+    ['Germany', 51.1657, 10.4515, 'Country', 'Hamburg cell and al-Maghrebi public biography context.'],
+    ['Hamburg, Germany', 53.5511, 9.9937, 'City', '9/11 Hamburg cell planning/recruitment geography.'],
+    ['Southeast Asia', 8.0, 115.0, 'Region', 'Jemaah Islamiyah, Hambali, Bali, and Al-Qaeda-linked regional ecosystem geography.'],
     ['United States', 39.8283, -98.5795, 'Country', '9/11, Pensacola, legal/prosecution, and target geography.'],
     ['New York, United States', 40.7128, -74.006, 'City', '9/11 attack and 1993 WTC bombing geography.'],
     ['Washington, DC, United States', 38.9072, -77.0369, 'City', '9/11 attack and U.S. government/legal geography.'],
@@ -500,7 +615,7 @@ function locationSpecs(sourceIds) {
     summary,
     notes: summary,
     confidence: 'high',
-    tags: ['al-qaeda-framework', 'broad-public-geography'],
+    tags: ['al-qaeda-framework', 'broad-public-geography', ...locationFunctionTags(summary)],
     sourceIds: inferSourceIds(name, summary, sourceIds),
     details: {
       name,
@@ -618,6 +733,65 @@ function eventRows(sourceIds) {
     ['Coordinated JNIM / Front for the Liberation of Azawad attacks across Mali', '2026-04-25', 'Conflict event', 'Kidal, Mali', 'NCTC-described coordinated attacks and Kidal capture.'],
     ['NCTC Al-Qaeda profile: decentralized affiliate network', '2026-05', 'Source publication', 'United States', 'Current public profile anchor in pasted notes.']
   ];
+  rows.push(
+    ['Limburg tanker bombing', '2002-10', 'Conflict event', 'Yemen', 'Al-Qaeda-linked militants attacked the French oil tanker Limburg off Yemen.'],
+    ['U.S. Embassy attack in Sanaa', '2008', 'Conflict event', 'Sanaa, Yemen', 'Pre-AQAP escalation event in Yemen.'],
+    ['Attempted assassination of Saudi Prince Mohammed bin Nayef', '2009-08', 'Conflict event', 'Saudi Arabia', 'AQAP attempted to assassinate Saudi Arabia counterterrorism chief.'],
+    ['AQAP designated U.S. FTO and SDGT', '2010-01', 'Sanction/designation', 'United States', 'AQAP designated as a Foreign Terrorist Organization and SDGT entity.'],
+    ['Inspire begins', '2010', 'Source publication', 'Yemen', 'AQAP begins English-language Inspire media era; catalogue as propaganda artifact only.'],
+    ['Anwar al-Awlaki and Samir Khan killed', '2011-09', 'Death', 'Yemen', 'AQAP English-language media figures killed.'],
+    ['Sanaa military parade rehearsal bombing', '2012-05', 'Conflict event', 'Sanaa, Yemen', 'AQAP-linked attack against Yemeni soldiers.'],
+    ['Yemen Ministry of Defense attack', '2013-12', 'Conflict event', 'Sanaa, Yemen', 'AQAP attack against Yemen Ministry of Defense complex.'],
+    ['Sanaa central prison break', '2014-02', 'Other', 'Sanaa, Yemen', 'AQAP frees prisoners from Sana’a Central Prison.'],
+    ['AQAP Mukalla governance period', '2015', 'Other', 'Mukalla, Yemen', 'AQAP governance/territorial-control period around Mukalla.'],
+    ['AQAP pushed from Mukalla', '2016-04', 'Conflict event', 'Mukalla, Yemen', 'AQAP loses major territorial/revenue base.'],
+    ['Yakla / al-Bayda raid', '2017-01', 'Conflict event', 'al-Bayda, Yemen', 'Yakla/al-Bayda raid in AQAP-related geography.'],
+    ['GSPC formed', '1998', 'Relationship change', 'Algeria', 'GSPC formed as AQIM predecessor.'],
+    ['European tourist kidnappings in the Sahara', '2003', 'Conflict event', 'Algeria', 'Sahara kidnapping economy event in AQIM/GSPC lineage.'],
+    ['Christopher Leggett killing', '2009-06', 'Conflict event', 'Mali', 'AQIM/Sahel event from the affiliate-depth notes.'],
+    ['Michel Germaneau hostage execution', '2010', 'Conflict event', 'Mali', 'AQIM hostage case in the Sahel.'],
+    ['Arab Spring and Libya weapons dispersal', '2011', 'Other', 'Libya', 'Regional destabilization and weapons dispersal context for AQIM/Sahel networks.'],
+    ['Algiers bombings', '2007-04', 'Conflict event', 'Algiers, Algeria', 'AQIM conducts major bombings in Algeria.'],
+    ['Algiers UN and Constitutional Court bombings', '2007-12-11', 'Conflict event', 'Algiers, Algeria', 'AQIM car bomb attacks against UN offices and Algeria Constitutional Court.'],
+    ['Ouagadougou attack', '2016-01-15', 'Conflict event', 'Ouagadougou, Burkina Faso', 'AQIM militants attacked a luxury hotel and police station.'],
+    ['Ouagadougou attacks', '2018-03', 'Conflict event', 'Ouagadougou, Burkina Faso', 'JNIM-linked Ouagadougou attacks from the affiliate-depth notes.'],
+    ['Timbuktu UN base attack', '2018-04-14', 'Conflict event', 'Timbuktu, Mali', 'JNIM complex attack near Timbuktu Airport against UN base.'],
+    ['Central Mali expansion', '2019', 'Conflict event', 'Mopti, Mali', 'JNIM and Macina/Katibat Macina rural expansion phase.'],
+    ['JNIM kidnapping and extortion networks expand', '2023', 'Other', 'Mali', 'JNIM kidnapping/extortion network phase from the notes.'],
+    ['JNIM kidnaps UAE royal family member near Bamako', '2025-09-26', 'Conflict event', 'Bamako, Mali', 'JNIM hostage/ransom event near Bamako.'],
+    ['al-Shabaab emerges from ICU environment', '2006', 'Relationship change', 'Somalia', 'al-Shabaab emerges after Islamic Courts Union military-wing environment.'],
+    ['Hargeisa and Bosaso bombings', '2008', 'Conflict event', 'Somalia', 'al-Shabaab attack sequence in the affiliate-depth notes.'],
+    ['Beledweyne bombing', '2009', 'Conflict event', 'Somalia', 'al-Shabaab bombing event in the affiliate-depth notes.'],
+    ['Kampala World Cup bombings', '2010-07', 'Conflict event', 'Somalia', 'al-Shabaab regional external attack capability event.'],
+    ['Mogadishu offensive / famine-era attacks', '2011', 'Conflict event', 'Mogadishu, Somalia', 'al-Shabaab Mogadishu offensive and famine-era attack context.'],
+    ['Mogadishu 2011 truck bombing', '2011-10', 'Conflict event', 'Mogadishu, Somalia', 'al-Shabaab truck bombing in Mogadishu.'],
+    ['El Adde attack', '2016-01', 'Conflict event', 'Somalia', 'al-Shabaab attack against Kenya Defense Forces base.'],
+    ['Kulbiyow attack', '2017-01', 'Conflict event', 'Somalia', 'al-Shabaab attack from the affiliate-depth notes.'],
+    ['Elite Hotel attack', '2020-08', 'Conflict event', 'Mogadishu, Somalia', 'al-Shabaab Elite Hotel attack.'],
+    ['Hayat Hotel attack', '2022-08', 'Conflict event', 'Mogadishu, Somalia', 'al-Shabaab prolonged hotel siege in Mogadishu.'],
+    ['Mogadishu Education Ministry bombings', '2022-10', 'Conflict event', 'Mogadishu, Somalia', 'al-Shabaab Education Ministry bombing event.'],
+    ['Bulo Marer AU base attack', '2023-05', 'Conflict event', 'Somalia', 'al-Shabaab attack against AU base.'],
+    ['Attempted assassination of Somali President Hassan Sheikh Mohamud', '2025-03', 'Conflict event', 'Mogadishu, Somalia', 'al-Shabaab attempted assassination event.'],
+    ['Bangladesh secular blogger and publisher attacks', '2015', 'Conflict event', 'Dhaka, Bangladesh', 'AQIS Bangladesh secular writer/publisher attack sequence.'],
+    ['Avijit Roy murdered', '2015-02-26', 'Conflict event', 'Dhaka, Bangladesh', 'Bangladesh secular writer murder in the AQIS-linked attack sequence.'],
+    ['Faisal Arefin Dipan murdered', '2015-10-31', 'Conflict event', 'Dhaka, Bangladesh', 'Bangladesh publisher murder in the AQIS-linked attack sequence.'],
+    ['AQIS FTO designation', '2016-06', 'Sanction/designation', 'United States', 'AQIS designated as FTO and SDGT.'],
+    ['AQIS leadership pressure period', '2017', 'Other', 'Afghanistan', 'AQIS leadership pressure phase after 2017.'],
+    ['Jabhat al-Nusra Damascus/Aleppo bombing wave', '2012', 'Conflict event', 'Syria', 'Nusra-era Syria bombing wave.'],
+    ['ISIS / Nusra split begins', '2013-04', 'Relationship change', 'Syria', 'Baghdadi merger claim, Julani rejection, and pledge to Zawahiri.'],
+    ['Nusra participates in Idlib offensive', '2015', 'Conflict event', 'Idlib, Syria', 'Nusra participates in Idlib offensive.'],
+    ['Hurras al-Din designated', '2019-09', 'Sanction/designation', 'Syria', 'State designates Hurras al-Din and Faruq al-Suri as SDGT.'],
+    ['Hurras al-Din attack in Ar Raqqah Province', '2021-01', 'Conflict event', 'Raqqah, Syria', 'Hurras attack outside Russian military base in Ar Raqqah Province according to notes.'],
+    ['Hurras al-Din attack in Damascus', '2021-08', 'Conflict event', 'Damascus, Syria', 'Hurras attack against Syrian Republican Guard bus in Damascus according to notes.'],
+    ['Hurras al-Din participates in Latakia attack', '2023-04', 'Conflict event', 'Latakia, Syria', 'Hurras participation in Ansar al-Islam-led attack in Latakia.'],
+    ['Former Hurras members participate in Latakia/Tartus violence', '2025-03', 'Conflict event', 'Latakia, Syria', 'Former Hurras members participate in violence in Latakia and Tartus according to notes.'],
+    ['Ramzi Yousef captured', '1995', 'Arrest', 'Pakistan', 'Capture/detention event from the Part 4 status index.'],
+    ['Zacarias Moussaoui arrested', '2001', 'Arrest', 'United States', 'Pre-9/11 arrest and later conviction case.'],
+    ['Abu Zubaydah captured', '2002', 'Arrest', 'Pakistan', 'Post-9/11 high-value capture/detention event.'],
+    ['Abd al-Rahim al-Nashiri captured', '2002', 'Arrest', 'United States', 'USS Cole case capture/detention event.'],
+    ['Hambali captured', '2003', 'Arrest', 'Southeast Asia', 'Jemaah Islamiyah / Al-Qaeda-linked Southeast Asia capture event.'],
+    ['Abu Faraj al-Libi captured', '2004', 'Arrest', 'Pakistan', 'Senior Al-Qaeda figure captured in Pakistan.']
+  );
   return rows.map(([title, dateStart, eventType, locationName, description]) => ({
     id: stableId('event', title),
     title,
@@ -632,9 +806,9 @@ function eventRows(sourceIds) {
     involvedOrganizationIds: [],
     sourceIds: inferSourceIds(title, description, sourceIds),
     description,
-    analystNotes: description,
+    analystNotes: `${description}\n\nDate precision: ${datePrecision(dateStart)}.`,
     confidence: title.includes('Benghazi') ? 'low' : 'high',
-    tags: ['al-qaeda-framework', 'timeline']
+    tags: ['al-qaeda-framework', 'timeline', `date-precision-${datePrecision(dateStart)}`]
   }));
 }
 
@@ -899,6 +1073,244 @@ function buildRelationships(entities, sourceIds) {
     ['Haqqani Network', 'Pakistan']
   ];
   for (const [org, loc] of locations) add(idFor(org), idFor(loc, 'loc'), 'operates_in', `${org} operates in or is historically tied to ${loc}.`);
+
+  const grammarRels = [
+    ['AQAP', 'Al-Qaeda Core', 'formal_affiliate_of', 'Formal affiliate relationship, Yemen.'],
+    ['AQIM', 'Al-Qaeda Core', 'formal_affiliate_of', 'Formal affiliate relationship, North Africa/Sahel.'],
+    ['AQIS', 'Al-Qaeda Core', 'formal_affiliate_of', 'Formal affiliate relationship, South Asia.'],
+    ['Al-Shabaab', 'Al-Qaeda Core', 'formal_affiliate_of', 'Formal affiliate relationship after 2012 pledge.'],
+    ['Hurras al-Din', 'Al-Qaeda Core', 'formal_affiliate_of', 'Former formal Syria affiliate before public dissolution in 2025.', 'former'],
+    ['Jabhat al-Nusra', 'Al-Qaeda Core', 'formal_affiliate_of', 'Former formal Syria affiliate before breakaway path.', 'former'],
+    ['AQI', 'Al-Qaeda Core', 'legacy_branch_of', 'Former Iraq branch that evolved into the Islamic State pathway.', 'former'],
+    ['Islamic State', 'Al-Qaeda Core', 'rival_successor_of', 'Rival successor movement from AQI lineage; not Al-Qaeda.', 'former'],
+    ['Taliban', 'Al-Qaeda Core', 'sanctuary_provider_for', 'Separate organization; sanctuary/protection relationship, not affiliate.'],
+    ['Haqqani Network', 'Al-Qaeda Core', 'sanctuary_provider_for', 'Separate Taliban-linked sanctuary bridge and relationship network.'],
+    ['AQIS', 'Taliban', 'pledged_allegiance_to', 'AQIS pledged allegiance to Taliban leader partly to secure safe haven.'],
+    ['JNIM', 'AQIM', 'pledged_allegiance_to', 'JNIM allegiance chain through AQIM emir.'],
+    ['JNIM', 'Al-Qaeda Core', 'pledged_allegiance_to', 'JNIM pledge to Al-Qaeda emir.'],
+    ['JNIM', 'Taliban', 'pledged_allegiance_to', 'JNIM pledge included Taliban leader as symbolic allegiance target.'],
+    ['Ansar al-Din', 'JNIM', 'merged_into', 'Sahel merger component.'],
+    ['Al-Murabitun', 'JNIM', 'merged_into', 'Sahel merger component.'],
+    ['Macina Liberation Front', 'JNIM', 'merged_into', 'Sahel merger component.'],
+    ['AQIM Sahara Emirate', 'JNIM', 'merged_into', 'Sahel merger component.'],
+    ['Jabhat al-Nusra', 'Al-Qaeda Core', 'broke_from', 'Nusra broke from Al-Qaeda and followed the JFS/HTS path.', 'former'],
+    ['Hayat Tahrir al-Sham', 'Al-Qaeda Core', 'breakaway_from', 'HTS is a former-branch lineage, not current Al-Qaeda.', 'former'],
+    ['Hassan al-Banna', 'Sayyid Qutb', 'ideological_influence_on', 'Ideological background lineage only.', 'former', 'medium'],
+    ['Sayyid Qutb', 'Al-Qaeda Core', 'ideological_influence_on', 'Ideological influence, not operational command.', 'former', 'medium'],
+    ['Abdullah Azzam', 'Al-Qaeda Core', 'ideological_influence_on', 'Azzam helped shape the environment from which Al-Qaeda emerged.', 'former', 'high']
+  ];
+  for (const [source, target, type, notes, status = 'active', confidence = 'high'] of grammarRels) {
+    add(
+      source.includes('Hassan') || source.includes('Sayyid') || source.includes('Abdullah Azzam') ? idFor(source, 'person') : idFor(source),
+      target.includes('Sayyid') ? idFor(target, 'person') : idFor(target),
+      type,
+      notes,
+      status,
+      confidence
+    );
+  }
+
+  const structuralRels = [
+    ['AQAP Prison Network', 'AQAP', 'part_of'],
+    ['AQAP Former Detainee Layer', 'AQAP', 'part_of'],
+    ['AQAP Territorial Governance Layer', 'AQAP', 'part_of'],
+    ['AQAP Aviation Plot Cell', 'AQAP', 'part_of'],
+    ['AQIM Sahara Kidnapping Economy', 'AQIM', 'part_of'],
+    ['JNIM Siege and Blockade Economy', 'JNIM', 'part_of'],
+    ['al-Shabaab Amniyat', 'Al-Shabaab', 'part_of'],
+    ['al-Shabaab Finance Wing', 'Al-Shabaab', 'part_of'],
+    ['al-Shabaab Military Wing', 'Al-Shabaab', 'part_of'],
+    ['AQIS Recruitment Network', 'AQIS', 'part_of'],
+    ['AQIS Bangladesh Attack Cell', 'AQIS', 'part_of'],
+    ['Syria Split File', 'Jabhat al-Nusra', 'part_of'],
+    ['Hurras al-Din Remnants', 'Hurras al-Din', 'part_of']
+  ];
+  for (const [source, target, type] of structuralRels) add(idFor(source), idFor(target), type, `${source} ${type.replaceAll('_', ' ')} ${target}.`);
+
+  const successionRels = [
+    ['Osama bin Laden', 'Ayman al-Zawahiri', 'succeeded_by'],
+    ['Ayman al-Zawahiri', 'Sayf al-Adl', 'succeeded_by'],
+    ['Nasir al-Wuhayshi', 'Qasim al-Raymi', 'succeeded_by'],
+    ['Qasim al-Raymi', 'Khalid Batarfi', 'succeeded_by'],
+    ['Khalid Batarfi', 'Saad bin Atef al-Awlaki', 'succeeded_by'],
+    ['Asim Umar', 'Usama Mahmood', 'succeeded_by'],
+    ['Abdelmalek Droukdel', 'Abu Ubaydah Yusuf al-Anabi', 'succeeded_by'],
+    ['Ahmed Abdi Godane', 'Ahmed Diriye', 'succeeded_by'],
+    ['Mullah Omar', 'Haibatullah Akhundzada', 'succeeded_by']
+  ];
+  for (const [source, target, type] of successionRels) add(idFor(source, 'person'), idFor(target, 'person'), type, `${source} ${type.replaceAll('_', ' ')} ${target}.`);
+
+  const spouseLinks = [
+    ['Osama bin Laden', 'Najwa Ghanem'],
+    ['Osama bin Laden', 'Khadijah'],
+    ['Osama bin Laden', 'Khairiah Sabar'],
+    ['Osama bin Laden', 'Siham Sabar'],
+    ['Osama bin Laden', 'Amal Ahmed al-Sadah'],
+    ['Osama bin Laden', 'Unknown wife of Osama bin Laden'],
+    ['Abd al-Rahman al-Maghrebi', 'Nabila al-Zawahiri']
+  ];
+  for (const [source, target] of spouseLinks) add(idFor(source, 'person'), idFor(target, 'person'), 'spouse_of', `${source} spouse_of ${target}.`);
+
+  const childLinks = [
+    ['Najwa Ghanem', 'Abdullah bin Laden'],
+    ['Najwa Ghanem', 'Abdul Rahman bin Laden'],
+    ['Najwa Ghanem', 'Saad bin Laden'],
+    ['Najwa Ghanem', 'Omar bin Laden'],
+    ['Najwa Ghanem', 'Osman bin Laden'],
+    ['Najwa Ghanem', 'Muhammad bin Laden'],
+    ['Najwa Ghanem', 'Fatima bin Laden'],
+    ['Najwa Ghanem', 'Iman bin Laden'],
+    ['Najwa Ghanem', 'Ladin Bakir bin Laden'],
+    ['Najwa Ghanem', 'Rukhaiya bin Laden'],
+    ['Najwa Ghanem', 'Nour bin Laden'],
+    ['Khadijah', 'Ali bin Laden'],
+    ['Khadijah', 'Amer bin Laden'],
+    ['Khadijah', 'Aisha bin Laden'],
+    ['Khairiah Sabar', 'Hamza bin Laden'],
+    ['Siham Sabar', 'Khadijah bin Laden'],
+    ['Siham Sabar', 'Khalid bin Laden'],
+    ['Siham Sabar', 'Miriam bin Laden'],
+    ['Siham Sabar', 'Sumaiya bin Laden'],
+    ['Amal Ahmed al-Sadah', 'Safiyah bin Laden'],
+    ['Amal Ahmed al-Sadah', 'Aasia bin Laden'],
+    ['Amal Ahmed al-Sadah', 'Ibrahim bin Laden'],
+    ['Amal Ahmed al-Sadah', 'Zainab bin Laden'],
+    ['Amal Ahmed al-Sadah', 'Hussain bin Laden'],
+    ['Osama bin Laden', 'Abdullah bin Laden'],
+    ['Osama bin Laden', 'Abdul Rahman bin Laden'],
+    ['Osama bin Laden', 'Osman bin Laden'],
+    ['Osama bin Laden', 'Fatima bin Laden'],
+    ['Osama bin Laden', 'Iman bin Laden'],
+    ['Osama bin Laden', 'Ladin Bakir bin Laden'],
+    ['Osama bin Laden', 'Rukhaiya bin Laden'],
+    ['Osama bin Laden', 'Nour bin Laden'],
+    ['Osama bin Laden', 'Ali bin Laden'],
+    ['Osama bin Laden', 'Amer bin Laden'],
+    ['Osama bin Laden', 'Aisha bin Laden'],
+    ['Osama bin Laden', 'Khadijah bin Laden'],
+    ['Osama bin Laden', 'Miriam bin Laden'],
+    ['Osama bin Laden', 'Sumaiya bin Laden'],
+    ['Osama bin Laden', 'Safiyah bin Laden'],
+    ['Osama bin Laden', 'Aasia bin Laden'],
+    ['Osama bin Laden', 'Ibrahim bin Laden'],
+    ['Osama bin Laden', 'Zainab bin Laden'],
+    ['Osama bin Laden', 'Hussain bin Laden'],
+    ['Ayman al-Zawahiri', 'Nabila al-Zawahiri'],
+    ['Ayman al-Zawahiri', 'Mohammed al-Zawahiri'],
+    ['Ayman al-Zawahiri', 'Aisha al-Zawahiri'],
+    ['Azza Ahmed Nowari', 'Mohammed al-Zawahiri'],
+    ['Azza Ahmed Nowari', 'Aisha al-Zawahiri'],
+    ['Mullah Omar', 'Mullah Yaqoob Mujahid'],
+    ['Jalaluddin Haqqani', 'Khalil Haqqani'],
+    ['Jalaluddin Haqqani', 'Nasiruddin Haqqani'],
+    ['Jalaluddin Haqqani', 'Badruddin Haqqani'],
+    ['Jalaluddin Haqqani', 'Anas Haqqani'],
+    ['Jalaluddin Haqqani', 'Yahya Haqqani'],
+    ['Jalaluddin Haqqani', 'Aziz Haqqani']
+  ];
+  for (const [source, target] of childLinks) add(idFor(source, 'person'), idFor(target, 'person'), 'parent_of', `${source} parent_of ${target}.`);
+
+  const statusRels = [
+    ['Al-Qaeda Core', 'U.S. State Department', 'designated_by'],
+    ['AQAP', 'U.S. State Department', 'designated_by'],
+    ['AQIM', 'U.S. State Department', 'designated_by'],
+    ['Al-Shabaab', 'U.S. State Department', 'designated_by'],
+    ['AQIS', 'U.S. State Department', 'designated_by'],
+    ['JNIM', 'U.S. State Department', 'designated_by'],
+    ['Hurras al-Din', 'U.S. State Department', 'designated_by'],
+    ['Sayf al-Adl', 'Federal Bureau of Investigation', 'wanted_by'],
+    ['Sayf al-Adl', 'Rewards for Justice', 'wanted_by'],
+    ['Abd al-Rahman al-Maghrebi', 'Federal Bureau of Investigation', 'wanted_by'],
+    ['Abd al-Rahman al-Maghrebi', 'Rewards for Justice', 'wanted_by'],
+    ['Hamza Salih bin Said al-Ghamdi', 'Federal Bureau of Investigation', 'wanted_by'],
+    ['Saad bin Atef al-Awlaki', 'Rewards for Justice', 'wanted_by'],
+    ['Ibrahim al-Banna', 'Rewards for Justice', 'wanted_by'],
+    ['Ibrahim Ahmed Mahmoud al-Qosi', 'Rewards for Justice', 'wanted_by'],
+    ['Ahmed Diriye', 'U.S. State Department', 'designated_by'],
+    ['Mahad Karate', 'United Nations Security Council Monitoring Team', 'designated_by'],
+    ['Sami al-Uraydi', 'U.S. State Department', 'designated_by'],
+    ['Khalid Sheikh Mohammed', 'Guantanamo Bay', 'located_in'],
+    ['Ramzi Yousef', 'Federal Bureau of Investigation', 'captured_in'],
+    ['Abu Zubaydah', 'Pakistan', 'captured_in'],
+    ['Abd al-Rahim al-Nashiri', 'United States', 'captured_in'],
+    ['Hambali', 'Southeast Asia', 'captured_in'],
+    ['Abu Faraj al-Libi', 'Pakistan', 'captured_in']
+  ];
+  for (const [source, target, type] of statusRels) {
+    const sourceIsPerson = !entityIds.has(idFor(source)) && entityIds.has(idFor(source, 'person'));
+    const targetType = entityIds.has(idFor(target, 'loc')) ? 'loc' : 'org';
+    add(sourceIsPerson ? idFor(source, 'person') : idFor(source), targetType === 'loc' ? idFor(target, 'loc') : idFor(target), type, `${source} ${type.replaceAll('_', ' ')} ${target}.`);
+  }
+
+  const personLocations = [
+    ['Osama bin Laden', 'Saudi Arabia'],
+    ['Osama bin Laden', 'Sudan'],
+    ['Osama bin Laden', 'Afghanistan'],
+    ['Osama bin Laden', 'Pakistan'],
+    ['Osama bin Laden', 'Abbottabad, Pakistan'],
+    ['Ayman al-Zawahiri', 'Egypt'],
+    ['Ayman al-Zawahiri', 'Afghanistan'],
+    ['Ayman al-Zawahiri', 'Pakistan'],
+    ['Ayman al-Zawahiri', 'Kabul, Afghanistan'],
+    ['Sayf al-Adl', 'Egypt'],
+    ['Sayf al-Adl', 'Afghanistan'],
+    ['Sayf al-Adl', 'Iran'],
+    ['Abd al-Rahman al-Maghrebi', 'Morocco'],
+    ['Abd al-Rahman al-Maghrebi', 'Germany'],
+    ['Abd al-Rahman al-Maghrebi', 'Afghanistan'],
+    ['Abd al-Rahman al-Maghrebi', 'Pakistan'],
+    ['Abd al-Rahman al-Maghrebi', 'Iran'],
+    ['Khalid Sheikh Mohammed', 'Kuwait'],
+    ['Khalid Sheikh Mohammed', 'Rawalpindi, Pakistan'],
+    ['Mohammed Atef', 'Egypt'],
+    ['Mohammed Atef', 'Afghanistan'],
+    ['Abu Muhammad al-Masri', 'Egypt'],
+    ['Abu Muhammad al-Masri', 'Iran'],
+    ['Yasin al-Suri', 'Iran'],
+    ['Muhsin al-Fadhli', 'Iran'],
+    ['Muhsin al-Fadhli', 'Syria']
+  ];
+  for (const [person, loc] of personLocations) add(idFor(person, 'person'), idFor(loc, 'loc'), 'located_in', `${person} broad public geography: ${loc}.`);
+
+  const orgLocations = [
+    ['AQAP', 'Abyan, Yemen'],
+    ['AQAP', 'Zinjibar, Yemen'],
+    ['AQAP', 'Shabwah, Yemen'],
+    ['AQAP', 'Hadramawt, Yemen'],
+    ['AQAP', 'al-Bayda, Yemen'],
+    ['AQAP', 'Marib, Yemen'],
+    ['JNIM', 'Kidal, Mali'],
+    ['JNIM', 'Gao, Mali'],
+    ['JNIM', 'Timbuktu, Mali'],
+    ['JNIM', 'Bamako, Mali'],
+    ['JNIM', 'Djibo, Burkina Faso'],
+    ['Al-Shabaab', 'Mogadishu, Somalia'],
+    ['Al-Shabaab', 'Lower Shabelle, Somalia'],
+    ['Al-Shabaab', 'Jubaland, Somalia'],
+    ['Al-Shabaab', 'Garissa, Kenya'],
+    ['Al-Shabaab', 'Manda Bay, Kenya'],
+    ['AQIS', 'Karachi, Pakistan'],
+    ['AQIS', 'India'],
+    ['AQIS', 'Dhaka, Bangladesh'],
+    ['Hurras al-Din', 'Idlib, Syria'],
+    ['Hurras al-Din', 'Latakia, Syria'],
+    ['Hurras al-Din', 'Damascus, Syria']
+  ];
+  for (const [org, loc] of orgLocations) add(idFor(org), idFor(loc, 'loc'), 'operates_in', `${org} broad public operating/event geography: ${loc}.`);
+
+  const lowConfidenceRels = [
+    ['Hamza Salih bin Said al-Ghamdi', 'Al-Qaeda Shura Council', 'chart_claim_relationship', 'TIC chart/Shura-context claim; keep as chart-derived until corroborated.'],
+    ['Khalil Haqqani', 'Al-Qaeda Core', 'chart_claim_relationship', 'TIC-style Al-Qaeda-member claim should remain chart-derived unless independently verified.'],
+    ['Abdul Rauf Zakir', 'Al-Qaeda Shura Council', 'chart_claim_relationship', 'TIC chart Shura claim; needs corroboration.'],
+    ['Boubaker al-Hakim', 'AQI', 'screenshot_derived_relationship', 'Benghazi/AQI screenshot-derived relationship; needs corroboration.'],
+    ['Ali Ouni al-Harzi', 'AQI', 'screenshot_derived_relationship', 'Benghazi/AQI screenshot-derived relationship; needs corroboration.'],
+    ['Tariq al-Harzi', 'AQI', 'screenshot_derived_relationship', 'Benghazi/AQI screenshot-derived relationship; needs corroboration.'],
+    ['Mansour al-Shalaali', 'AQIM', 'screenshot_derived_relationship', 'Benghazi/AQIM screenshot-derived relationship; needs corroboration.'],
+    ['Hashem Bousidra', 'AQIM', 'screenshot_derived_relationship', 'Benghazi/AQIM screenshot-derived relationship; needs corroboration.']
+  ];
+  for (const [source, target, type, notes] of lowConfidenceRels) {
+    add(idFor(source, 'person'), idFor(target), type, notes, 'alleged', 'low');
+  }
   return relationships;
 }
 
@@ -982,6 +1394,26 @@ function buildClaims(sourceIds) {
       confidence: 'high',
       status: 'supported',
       notes: 'The pasted framework explicitly recommends separate case-file treatment.'
+    },
+    {
+      id: 'claim-chart-derived-shura-labels',
+      claimText: 'TIC chart-derived Shura Council and committee labels should be preserved but treated as unverified until independently corroborated.',
+      claimType: 'chart-derived',
+      linkedEntityId: idFor('Al-Qaeda Shura Council'),
+      sourceIds: [sourceIds.local],
+      confidence: 'low',
+      status: 'unverified',
+      notes: 'This claim powers the low-confidence chart-derived relationship layer.'
+    },
+    {
+      id: 'claim-benghazi-screenshot-relationships',
+      claimText: 'Benghazi/AQI/AQIM screenshot-derived relationship edges are case-file leads, not confirmed operational conclusions.',
+      claimType: 'screenshot-derived',
+      linkedEntityId: '',
+      sourceIds: [sourceIds.local],
+      confidence: 'low',
+      status: 'unverified',
+      notes: 'Stored to make the uncertainty visible in claims and dashboard metrics.'
     }
   ];
 }
