@@ -4,6 +4,8 @@ data/*.sqlite
 data/*.sqlite-*
 media/images/*
 media/documents/*
+!media/documents/images/
+!media/documents/images/**
 media/originals/*
 media/processed/*
 exports/*
