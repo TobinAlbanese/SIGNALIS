@@ -1,21 +1,22 @@
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { CalendarPlus, FileText, GitBranch, Landmark, Network, Plus, StickyNote, UserRound } from 'lucide-react';
+import { CalendarPlus, FileText, GitBranch, Landmark, MapPin, Plus, StickyNote, UserRound } from 'lucide-react';
 import { confidenceValues, entityTypes, eventTypes, precisionLevels, relationshipTypes, sourceCredibility, sourceReliability, sourceTypes } from '../constants';
-import { splitList } from '../lib/api';
+import { formatRelationshipType, splitList } from '../lib/api';
 import { useWorkspace } from '../store/useWorkspace';
-import type { Confidence, EntityType } from '../types';
+import type { Confidence, Entity, EntityType } from '../types';
 import { Button } from './ui/Button';
 import { Field, Select, TextArea, TextInput } from './ui/Form';
 import { Modal } from './ui/Modal';
 
-type AddKind = 'entity' | 'relationship' | 'event' | 'source' | 'note' | 'project';
+type AddKind = 'entity' | 'relationship' | 'event' | 'location' | 'source' | 'note' | 'project';
 
 const labels: Array<{ value: AddKind; label: string; icon: JSX.Element }> = [
   { value: 'entity', label: 'Entity', icon: <UserRound size={16} /> },
   { value: 'relationship', label: 'Connection', icon: <GitBranch size={16} /> },
   { value: 'event', label: 'Event', icon: <CalendarPlus size={16} /> },
+  { value: 'location', label: 'Location', icon: <MapPin size={16} /> },
   { value: 'source', label: 'Source', icon: <FileText size={16} /> },
   { value: 'note', label: 'Note', icon: <StickyNote size={16} /> },
   { value: 'project', label: 'Project', icon: <Landmark size={16} /> }
@@ -23,16 +24,18 @@ const labels: Array<{ value: AddKind; label: string; icon: JSX.Element }> = [
 
 export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: () => void; defaultKind?: AddKind }) {
   const [kind, setKind] = useState<AddKind>(defaultKind);
-  const { entities, sources, createEntity, createRelationship, createEvent, createSource, createNote, createProject } = useWorkspace();
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const { entities, sources, createEntity, createRelationship, createEvent, createSource, createNote, createProject, uploadFile } = useWorkspace();
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { isSubmitting }
   } = useForm<Record<string, string>>({
     defaultValues: {
       type: 'person',
-      confidence: 'unknown',
+      confidence: '',
       relationshipType: 'associate_of',
       status: 'unknown',
       direction: 'directed',
@@ -44,7 +47,8 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
     }
   });
 
-  const entityOptions = useMemo(() => entities.map((entity) => ({ value: entity.id, label: entity.name })), [entities]);
+  const groupedEntities = useMemo(() => groupEntitiesForSelect(entities), [entities]);
+  const selectedEntityType = watch('type') || 'person';
 
   async function submit(raw: Record<string, string>) {
     if (kind === 'project') {
@@ -60,13 +64,15 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
     }
 
     if (kind === 'entity') {
-      const parsed = z.object({ name: z.string().min(1), type: z.string().min(1), confidence: z.string().min(1) }).parse(raw);
+      const parsed = z.object({ name: z.string().min(1), type: z.string().min(1), confidence: z.string().optional() }).parse(raw);
+      const imageRecord = selectedImage ? await uploadFile(selectedImage, { fileType: 'image' }) : null;
       await createEntity({
         type: parsed.type as EntityType,
         name: parsed.name,
         aliases: splitList(raw.aliases ?? ''),
         summary: raw.summary ?? '',
         notes: raw.notes ?? '',
+        imageFileId: imageRecord?.id ?? '',
         confidence: parsed.confidence as Confidence,
         tags: splitList(raw.tags ?? ''),
         sourceIds: raw.sourceId ? [raw.sourceId] : [],
@@ -90,13 +96,37 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
       });
     }
 
+    if (kind === 'location') {
+      const parsed = z.object({ name: z.string().min(1), confidence: z.string().optional() }).parse(raw);
+      await createEntity({
+        type: 'location',
+        name: parsed.name,
+        aliases: splitList(raw.aliases ?? ''),
+        summary: raw.summary ?? raw.notes ?? '',
+        notes: raw.notes ?? '',
+        confidence: parsed.confidence as Confidence,
+        tags: splitList(raw.tags ?? ''),
+        sourceIds: raw.sourceId ? [raw.sourceId] : [],
+        details: {
+          latitude: raw.latitude,
+          longitude: raw.longitude,
+          city: raw.city,
+          region: raw.region,
+          country: raw.country,
+          precisionLevel: raw.precisionLevel,
+          geocodeSource: raw.geocodeSource || 'Manual entry',
+          originalQuery: raw.originalQuery
+        }
+      });
+    }
+
     if (kind === 'relationship') {
       const parsed = z
         .object({
           sourceEntityId: z.string().min(1),
           targetEntityId: z.string().min(1),
           relationshipType: z.string().min(1),
-          confidence: z.string().min(1)
+          confidence: z.string().optional()
         })
         .parse(raw);
       await createRelationship({
@@ -112,7 +142,7 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
     }
 
     if (kind === 'event') {
-      const parsed = z.object({ title: z.string().min(1), eventType: z.string().min(1), confidence: z.string().min(1) }).parse(raw);
+      const parsed = z.object({ title: z.string().min(1), eventType: z.string().min(1), confidence: z.string().optional() }).parse(raw);
       await createEvent({
         title: parsed.title,
         eventType: parsed.eventType,
@@ -162,6 +192,7 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
     }
 
     reset();
+    setSelectedImage(null);
     onClose();
   }
 
@@ -180,7 +211,7 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
         </div>
       }
     >
-      <div className="mb-4 grid grid-cols-3 gap-2 sm:grid-cols-6">
+      <div className="mb-4 grid grid-cols-3 gap-2 sm:grid-cols-7">
         {labels.map((item) => (
           <Button
             key={item.value}
@@ -234,13 +265,16 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
               <Select {...register('confidence')}>
                 {confidenceValues.map((value) => (
                   <option key={value} value={value}>
-                    {value}
+                    {value || 'No confidence'}
                   </option>
                 ))}
               </Select>
             </Field>
             <Field label="Name">
               <TextInput {...register('name')} autoFocus />
+            </Field>
+            <Field label="Headshot / image">
+              <TextInput type="file" accept="image/*" onChange={(event) => setSelectedImage(event.target.files?.[0] ?? null)} />
             </Field>
             <Field label="Aliases">
               <TextInput {...register('aliases')} placeholder="comma separated" />
@@ -251,11 +285,13 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
             <Field label="Organization">
               <Select {...register('organizationId')}>
                 <option value="">None</option>
-                {entityOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+                {entities
+                  .filter((entity) => entity.type === 'organization' || entity.type === 'sub-organization')
+                  .map((entity) => (
+                    <option key={entity.id} value={entity.id}>
+                      {entity.name}
+                    </option>
+                  ))}
               </Select>
             </Field>
             <Field label="Last known location">
@@ -270,16 +306,18 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
                   ))}
               </Select>
             </Field>
-            <Field label="Primary source">
-              <Select {...register('sourceId')}>
-                <option value="">Unsourced</option>
-                {sources.map((source) => (
-                  <option key={source.id} value={source.id}>
-                    {source.title}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+            {selectedEntityType !== 'person' ? (
+              <Field label="Primary source">
+                <Select {...register('sourceId')}>
+                  <option value="">Unsourced</option>
+                  {sources.map((source) => (
+                    <option key={source.id} value={source.id}>
+                      {source.title}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            ) : null}
             <Field label="Latitude">
               <TextInput {...register('latitude')} inputMode="decimal" />
             </Field>
@@ -310,20 +348,28 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
             <Field label="Source entity">
               <Select {...register('sourceEntityId')} autoFocus>
                 <option value="">Select entity</option>
-                {entityOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
+                {groupedEntities.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.items.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </Select>
             </Field>
             <Field label="Target entity">
               <Select {...register('targetEntityId')}>
                 <option value="">Select entity</option>
-                {entityOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
+                {groupedEntities.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.items.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </Select>
             </Field>
@@ -331,7 +377,7 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
               <Select {...register('relationshipType')}>
                 {relationshipTypes.map((type) => (
                   <option key={type} value={type}>
-                    {type}
+                    {formatRelationshipType(type)}
                   </option>
                 ))}
               </Select>
@@ -340,7 +386,7 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
               <Select {...register('confidence')}>
                 {confidenceValues.map((value) => (
                   <option key={value} value={value}>
-                    {value}
+                    {value || 'No confidence'}
                   </option>
                 ))}
               </Select>
@@ -367,6 +413,61 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
             </Field>
             <Field label="End date">
               <TextInput type="date" {...register('endDate')} />
+            </Field>
+            <Field label="Notes">
+              <TextArea {...register('notes')} />
+            </Field>
+          </div>
+        ) : null}
+
+        {kind === 'location' ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Location name">
+              <TextInput {...register('name')} autoFocus />
+            </Field>
+            <Field label="Confidence">
+              <Select {...register('confidence')}>
+                {confidenceValues.map((value) => (
+                  <option key={value} value={value}>
+                    {value || 'No confidence'}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Latitude">
+              <TextInput {...register('latitude')} inputMode="decimal" />
+            </Field>
+            <Field label="Longitude">
+              <TextInput {...register('longitude')} inputMode="decimal" />
+            </Field>
+            <Field label="Precision">
+              <Select {...register('precisionLevel')}>
+                {precisionLevels.map((level) => (
+                  <option key={level}>{level}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Country">
+              <TextInput {...register('country')} />
+            </Field>
+            <Field label="City">
+              <TextInput {...register('city')} />
+            </Field>
+            <Field label="Region">
+              <TextInput {...register('region')} />
+            </Field>
+            <Field label="Primary source">
+              <Select {...register('sourceId')}>
+                <option value="">Unsourced</option>
+                {sources.map((source) => (
+                  <option key={source.id} value={source.id}>
+                    {source.title}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Tags">
+              <TextInput {...register('tags')} placeholder="comma separated" />
             </Field>
             <Field label="Notes">
               <TextArea {...register('notes')} />
@@ -407,7 +508,9 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
             <Field label="Confidence">
               <Select {...register('confidence')}>
                 {confidenceValues.map((value) => (
-                  <option key={value}>{value}</option>
+                  <option key={value} value={value}>
+                    {value || 'No confidence'}
+                  </option>
                 ))}
               </Select>
             </Field>
@@ -487,6 +590,9 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
             <Field label="Publication date">
               <TextInput type="date" {...register('publicationDate')} />
             </Field>
+            <Field label="Access date">
+              <TextInput type="date" {...register('accessDate')} />
+            </Field>
             <Field label="Reliability">
               <Select {...register('reliability')}>
                 {sourceReliability.map((value) => (
@@ -532,10 +638,14 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
             <Field label="Linked entity">
               <Select {...register('parentId')}>
                 <option value="">Project note</option>
-                {entityOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
+                {groupedEntities.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.items.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </Select>
             </Field>
@@ -550,4 +660,31 @@ export function QuickAddModal({ onClose, defaultKind = 'entity' }: { onClose: ()
       </form>
     </Modal>
   );
+}
+
+function groupEntitiesForSelect(entities: Entity[]): Array<{ label: string; items: Array<{ value: string; label: string }> }> {
+  const optionFor = (entity: Entity) => ({ value: entity.id, label: entity.name });
+  const groups = [
+    { label: 'People', items: entities.filter((entity) => entity.type === 'person').map(optionFor) },
+    {
+      label: 'Organizations',
+      items: entities.filter((entity) => entity.type === 'organization' || entity.type === 'sub-organization').map(optionFor)
+    },
+    { label: 'Locations', items: entities.filter((entity) => entity.type === 'location').map(optionFor) },
+    {
+      label: 'Events / Records',
+      items: entities.filter((entity) => entity.type === 'event' || entity.type === 'role' || entity.type === 'family-group').map(optionFor)
+    },
+    {
+      label: 'Files / Evidence',
+      items: entities.filter((entity) => entity.type === 'document' || entity.type === 'image' || entity.type === 'alias').map(optionFor)
+    },
+    {
+      label: 'Other',
+      items: entities.filter((entity) => ['account', 'vehicle', 'financial-entity', 'custom'].includes(entity.type)).map(optionFor)
+    }
+  ];
+  return groups
+    .map((group) => ({ ...group, items: group.items.sort((a, b) => a.label.localeCompare(b.label)) }))
+    .filter((group) => group.items.length);
 }

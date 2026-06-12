@@ -20,8 +20,12 @@ type TimelineItem = {
 export function TimelineView() {
   const { events, relationships, sources, entities, selectItem } = useWorkspace();
   const [confidenceFilter, setConfidenceFilter] = useState('all');
-  const [entityFilter, setEntityFilter] = useState('all');
+  const [personFilter, setPersonFilter] = useState('all');
+  const [organizationFilter, setOrganizationFilter] = useState('all');
+  const [eventFilter, setEventFilter] = useState('all');
   const [query, setQuery] = useState('');
+  const people = entities.filter((entity) => entity.type === 'person');
+  const organizations = entities.filter((entity) => entity.type === 'organization' || entity.type === 'sub-organization');
 
   const items = useMemo<TimelineItem[]>(() => {
     const eventItems = events.map((event) => ({
@@ -79,29 +83,49 @@ export function TimelineView() {
 
     return [...eventItems, ...relationshipItems, ...sourceItems]
       .filter((item: any) => confidenceFilter === 'all' || item.confidence === confidenceFilter)
-      .filter((item: any) => entityFilter === 'all' || item.relatedIds?.includes(entityFilter))
+      .filter((item: any) => personFilter === 'all' || item.relatedIds?.includes(personFilter))
+      .filter((item: any) => organizationFilter === 'all' || item.relatedIds?.includes(organizationFilter))
+      .filter((item: any) => eventFilter === 'all' || (item.kind === 'event' && item.id === eventFilter))
       .filter((item) => !query.trim() || `${item.title} ${item.body} ${item.type}`.toLowerCase().includes(query.toLowerCase()))
       .sort((a, b) => String(b.date).localeCompare(String(a.date)));
-  }, [confidenceFilter, entityFilter, events, query, relationships, sources]);
+  }, [confidenceFilter, eventFilter, events, organizationFilter, personFilter, query, relationships, sources]);
 
   return (
     <div>
       <SectionHeader title="Timeline" eyebrow="Chronology" />
 
-      <div className="mb-4 grid gap-2 md:grid-cols-3">
+      <div className="mb-4 grid gap-2 xl:grid-cols-[1fr_220px_240px_240px_170px]">
         <TextInput value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter timeline" />
-        <Select value={entityFilter} onChange={(event) => setEntityFilter(event.target.value)} aria-label="Entity filter">
-          <option value="all">All entities</option>
-          {entities.map((entity) => (
+        <Select value={personFilter} onChange={(event) => setPersonFilter(event.target.value)} aria-label="Person filter">
+          <option value="all">All individuals</option>
+          {people.map((entity) => (
             <option key={entity.id} value={entity.id}>
               {entity.name}
+            </option>
+          ))}
+        </Select>
+        <Select value={organizationFilter} onChange={(event) => setOrganizationFilter(event.target.value)} aria-label="Organization filter">
+          <option value="all">All organizations</option>
+          {organizations.map((entity) => (
+            <option key={entity.id} value={entity.id}>
+              {entity.name}
+            </option>
+          ))}
+        </Select>
+        <Select value={eventFilter} onChange={(event) => setEventFilter(event.target.value)} aria-label="Event filter">
+          <option value="all">All events</option>
+          {events.map((event) => (
+            <option key={event.id} value={event.id}>
+              {event.title}
             </option>
           ))}
         </Select>
         <Select value={confidenceFilter} onChange={(event) => setConfidenceFilter(event.target.value)} aria-label="Confidence filter">
           <option value="all">All confidence</option>
           {confidenceValues.map((value) => (
-            <option key={value}>{value}</option>
+            <option key={value} value={value}>
+              {value || 'No confidence'}
+            </option>
           ))}
         </Select>
       </div>

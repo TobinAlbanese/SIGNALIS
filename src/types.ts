@@ -1,4 +1,4 @@
-export type Confidence = 'high' | 'medium' | 'low' | 'unknown' | 'contradicted';
+export type Confidence = '' | 'high' | 'medium' | 'low' | 'unknown' | 'contradicted';
 
 export type EntityType =
   | 'person'
@@ -217,6 +217,11 @@ export interface AuditLogRecord {
   createdAt: string;
 }
 
+export interface MapDraft {
+  lat: number;
+  lng: number;
+}
+
 export type SelectedItem =
   | { kind: 'project'; id: string }
   | { kind: 'entity'; id: string }
@@ -226,6 +231,7 @@ export type SelectedItem =
   | { kind: 'note'; id: string }
   | { kind: 'file'; id: string }
   | { kind: 'sticky'; id: string }
+  | { kind: 'mapDraft'; id: 'active' }
   | null;
 
 export interface SearchResults {

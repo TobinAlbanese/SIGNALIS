@@ -12,6 +12,7 @@ export function ReportsView() {
   const [pathFrom, setPathFrom] = useState('');
   const [pathTo, setPathTo] = useState('');
   const [pathResult, setPathResult] = useState<any[]>([]);
+  const entityGroups = useMemo(() => groupEntities(entities), [entities]);
 
   const entity = useMemo(() => entities.find((item) => item.id === entityId), [entities, entityId]);
   const entityRelationships = relationships.filter((relationship) => relationship.sourceEntityId === entityId || relationship.targetEntityId === entityId);
@@ -55,10 +56,14 @@ export function ReportsView() {
           <div className="mb-4 grid gap-3 md:grid-cols-[1fr_auto_auto]">
             <Field label="Entity dossier">
               <Select value={entityId} onChange={(event) => setEntityId(event.target.value)}>
-                {entities.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
+                {entityGroups.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.items.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </Select>
             </Field>
@@ -103,18 +108,26 @@ export function ReportsView() {
             <div className="grid gap-3">
               <Select value={pathFrom} onChange={(event) => setPathFrom(event.target.value)}>
                 <option value="">From entity</option>
-                {entities.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
+                {entityGroups.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.items.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </Select>
               <Select value={pathTo} onChange={(event) => setPathTo(event.target.value)}>
                 <option value="">To entity</option>
-                {entities.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
+                {entityGroups.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.items.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </Select>
               <Button variant="primary" onClick={findPath}>
@@ -148,4 +161,13 @@ export function ReportsView() {
       </div>
     </div>
   );
+}
+
+function groupEntities(entities: any[]) {
+  return [
+    { label: 'People', items: entities.filter((entity) => entity.type === 'person') },
+    { label: 'Organizations', items: entities.filter((entity) => entity.type === 'organization' || entity.type === 'sub-organization') },
+    { label: 'Locations', items: entities.filter((entity) => entity.type === 'location') },
+    { label: 'Sources / Documents / Other', items: entities.filter((entity) => !['person', 'organization', 'sub-organization', 'location'].includes(entity.type)) }
+  ].filter((group) => group.items.length);
 }

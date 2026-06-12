@@ -1,4 +1,5 @@
 import { AlertTriangle, CircleHelp, Database, GitBranch, MapPinned, NotebookTabs, ShieldCheck, UsersRound } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { compactDate } from '../lib/api';
 import { useWorkspace } from '../store/useWorkspace';
 import { ConfidenceBadge } from '../components/ui/Badge';
@@ -19,6 +20,7 @@ const metricIcons = {
 
 export function DashboardView() {
   const { activeProject, entities, relationships, events, sources, notes, openQuestions, claims, auditLog, selectItem } = useWorkspace();
+  const navigate = useNavigate();
 
   if (!activeProject) return <EmptyState title="Loading project" body="Preparing the local workspace." />;
 
@@ -33,6 +35,17 @@ export function DashboardView() {
     contradictions: claims.filter((claim) => claim.status === 'contradicted').length,
     openQuestions: openQuestions.filter((question) => question.status !== 'resolved').length
   };
+  const metricTargets: Record<string, string> = {
+    entities: '/entities',
+    relationships: '/graph',
+    events: '/timeline',
+    sources: '/sources',
+    locations: '/map',
+    unsourcedClaims: '/notes',
+    lowConfidenceRelationships: '/graph',
+    contradictions: '/notes',
+    openQuestions: '/notes'
+  };
 
   return (
     <div>
@@ -45,7 +58,7 @@ export function DashboardView() {
             <button
               key={key}
               className="surface rounded-lg p-4 text-left transition hover:border-[color:var(--c-accent)] hover:bg-white/[0.04]"
-              onClick={() => (key === 'entities' ? selectItem({ kind: 'project', id: activeProject.id }) : null)}
+              onClick={() => navigate(metricTargets[key] ?? '/')}
             >
               <div className="flex items-center justify-between gap-2">
                 <Icon size={18} className="text-[color:var(--c-accent)]" />
@@ -60,6 +73,26 @@ export function DashboardView() {
       </div>
 
       <div className="mt-5 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <section className="surface rounded-lg p-4 xl:col-span-2">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-semibold">Project breakdown</h2>
+            <span className="badge">{entities.length} active records</span>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              { label: 'People', count: entities.filter((entity) => entity.type === 'person').length, path: '/entities' },
+              { label: 'Organizations', count: entities.filter((entity) => entity.type === 'organization' || entity.type === 'sub-organization').length, path: '/entities' },
+              { label: 'Mapped locations', count: entities.filter((entity) => entity.type === 'location').length, path: '/map' },
+              { label: 'Source-backed edges', count: relationships.filter((relationship) => relationship.sourceIds?.length).length, path: '/graph' }
+            ].map((item) => (
+              <button key={item.label} className="rounded-md border border-white/10 bg-black/20 p-3 text-left hover:bg-white/[0.06]" onClick={() => navigate(item.path)}>
+                <div className="text-2xl font-semibold">{item.count}</div>
+                <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--c-text-secondary)]">{item.label}</div>
+              </button>
+            ))}
+          </div>
+        </section>
+
         <section className="surface rounded-lg p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-semibold">Recently edited records</h2>

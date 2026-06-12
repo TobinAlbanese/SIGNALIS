@@ -5,6 +5,7 @@ import type {
   Entity,
   EventRecord,
   FileRecord,
+  MapDraft,
   NoteRecord,
   OpenQuestion,
   Project,
@@ -31,6 +32,7 @@ interface WorkspaceState {
   files: FileRecord[];
   auditLog: AuditLogRecord[];
   selectedItem: SelectedItem;
+  mapDraft?: MapDraft;
   loading: boolean;
   error: string;
   searchResults?: SearchResults;
@@ -38,6 +40,8 @@ interface WorkspaceState {
   setActiveProject: (projectId: string) => Promise<void>;
   refreshProjectData: () => Promise<void>;
   selectItem: (item: SelectedItem) => void;
+  startMapDraft: (draft: MapDraft) => void;
+  clearMapDraft: () => void;
   createProject: (payload: Partial<Project>) => Promise<Project>;
   updateProject: (projectId: string, payload: Partial<Project>) => Promise<void>;
   createEntity: (payload: Partial<Entity> & Record<string, any>) => Promise<Entity>;
@@ -88,6 +92,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   files: [],
   auditLog: [],
   selectedItem: null,
+  mapDraft: undefined,
   loading: false,
   error: '',
 
@@ -132,7 +137,23 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     set({ selectedItem: item });
   },
 
+  startMapDraft(draft) {
+    set({ mapDraft: draft, selectedItem: { kind: 'mapDraft', id: 'active' } });
+  },
+
+  clearMapDraft() {
+    set({ mapDraft: undefined, selectedItem: null });
+  },
+
   async createProject(payload) {
+    const currentProjectId = get().activeProjectId;
+    if (currentProjectId) {
+      try {
+        await api(`/api/projects/${currentProjectId}/archive`, { method: 'POST' });
+      } catch (error) {
+        console.warn('Project archive skipped before creating a new project:', error);
+      }
+    }
     const project = await api<Project>('/api/projects', { method: 'POST', body: JSON.stringify(payload) });
     await get().loadProjects();
     await get().setActiveProject(project.id);

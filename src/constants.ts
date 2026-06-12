@@ -7,7 +7,6 @@ export const entityTypes: EntityType[] = [
   'role',
   'location',
   'event',
-  'source',
   'document',
   'image',
   'alias',
@@ -33,8 +32,22 @@ export const relationshipTypes = [
   'family_member_of',
   'parent_of',
   'child_of',
+  'son_of',
+  'daughter_of',
+  'brother_of',
+  'brother_in_law_of',
+  'son_in_law_of',
   'sibling_of',
   'spouse_of',
+  'ideological_mentor_of',
+  'spiritual_mentor_of',
+  'founded',
+  'co_founder_of',
+  'emir_of',
+  'caliph_of',
+  'representative_of',
+  'head_of',
+  'liaison_to',
   'associate_of',
   'ally_of',
   'rival_of',
@@ -58,7 +71,7 @@ export const relationshipTypes = [
   'custom'
 ];
 
-export const confidenceValues: Confidence[] = ['high', 'medium', 'low', 'unknown', 'contradicted'];
+export const confidenceValues: Confidence[] = ['', 'high', 'medium', 'low', 'unknown', 'contradicted'];
 
 export const precisionLevels = [
   'Exact coordinate',
@@ -132,6 +145,17 @@ export const hierarchyRelationshipTypes = new Set([
   'appointed_by'
 ]);
 
-export const familyRelationshipTypes = new Set(['parent_of', 'child_of', 'sibling_of', 'spouse_of', 'family_member_of']);
+export const familyRelationshipTypes = new Set([
+  'parent_of',
+  'child_of',
+  'son_of',
+  'daughter_of',
+  'brother_of',
+  'brother_in_law_of',
+  'son_in_law_of',
+  'sibling_of',
+  'spouse_of',
+  'family_member_of'
+]);
 
 export const organizationChartTypes = new Set(['leader_of', 'member_of', 'reports_to', 'part_of', 'deputy_of']);
